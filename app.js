@@ -17,7 +17,7 @@ const SUPABASE_URL = "https://dxoiuulrotueudmnqfxk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iiTToUfJSZNfe18EErsBHw_SrAFX_Zs";
 
 // Inisialisasi klien Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================
 // 2. FUNGSI DATABASE SUPABASE
@@ -30,7 +30,7 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function initDatabase() {
     try {
         // Test koneksi dengan fetch data sederhana
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('siswa')
             .select('id')
             .limit(1);
@@ -56,7 +56,7 @@ async function initDatabase() {
  */
 async function getSiswa() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('siswa')
             .select('*')
             .order('nama_panggilan', { ascending: true });
@@ -85,7 +85,7 @@ async function getSiswa() {
  */
 async function getSiswaById(id) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('siswa')
             .select('*')
             .eq('id', parseInt(id))
@@ -116,7 +116,7 @@ async function getSiswaById(id) {
  */
 async function getSiswaByNama(nama) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('siswa')
             .select('*')
             .ilike('nama_panggilan', nama)
@@ -148,7 +148,7 @@ async function getSiswaByNama(nama) {
  */
 async function updatePasswordSiswa(id, newPassword) {
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('siswa')
             .update({ password: newPassword })
             .eq('id', parseInt(id));
@@ -171,7 +171,7 @@ async function updatePasswordSiswa(id, newPassword) {
  */
 async function resetPasswordSiswa(id) {
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('siswa')
             .update({ password: '12345' })
             .eq('id', parseInt(id));
@@ -195,7 +195,7 @@ async function resetPasswordSiswa(id) {
  */
 async function updateStatusAbsen(id, newStatus) {
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('siswa')
             .update({ status_absen: newStatus })
             .eq('id', parseInt(id));
@@ -325,7 +325,7 @@ async function loadSiswa() {
     
     try {
         // Query langsung ke tabel siswa
-        const { data, error } = await supabase.from('siswa').select('*');
+        const { data, error } = await supabaseClient.from('siswa').select('*');
         
         if (error) {
             console.error('❌ Error loading siswa:', error.message);
@@ -376,7 +376,7 @@ async function debugMode() {
     console.log('Current Session:', sessionStorage.getItem('currentUser'));
     console.log('All Students:', await getSiswa());
     console.log('Today\'s Date:', getTodayString());
-    console.log('Supabase Client:', supabase ? 'Connected' : 'Not Connected');
+    console.log('Supabase Client:', supabaseClient ? 'Connected' : 'Not Connected');
     console.log('==================');
 }
 
@@ -393,9 +393,10 @@ window.logout = logout;
 window.getTodayString = getTodayString;
 window.loadSiswa = loadSiswa;
 window.loadSiswaOptions = loadSiswa; // Alias untuk kompatibilitas
+window.supabaseClient = supabaseClient;
 window.debugMode = debugMode;
 window.updatePasswordSiswa = updatePasswordSiswa;
 window.resetPasswordSiswa = resetPasswordSiswa;
 window.updateStatusAbsen = updateStatusAbsen;
 
-console.log('✅ app.js loaded successfully - Connected to Supabase');
+console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
