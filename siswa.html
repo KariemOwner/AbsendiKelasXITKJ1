@@ -218,11 +218,11 @@
             currentUser = checkAuth('siswa');
             if (!currentUser) return;
 
-            // Tampilkan nama siswa
-            document.getElementById('namaSiswa').textContent = currentUser.namaPanggilan;
+            // Tampilkan nama siswa dengan nama lengkap
+            document.getElementById('namaSiswa').textContent = currentUser.namaLengkap;
 
             // Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
-            tampilkanBannerSambutan(currentUser.namaPanggilan);
+            tampilkanBannerSambutan(currentUser.namaLengkap);
 
             // Tampilkan tanggal
             updateTanggal();
@@ -239,7 +239,7 @@
 
         /**
          * Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
-         * @param {string} nama - Nama panggilan siswa
+         * @param {string} nama - Nama lengkap siswa
          */
         function tampilkanBannerSambutan(nama) {
             const now = new Date();

@@ -67,6 +67,7 @@ async function getSiswa() {
         // Transform kolom snake_case ke camelCase untuk konsistensi
         return data.map(siswa => ({
             id: siswa.id.toString(),
+            namaLengkap: siswa.nama_lengkap,
             namaPanggilan: siswa.nama_panggilan,
             password: siswa.password,
             role: siswa.role,
@@ -99,6 +100,7 @@ async function getSiswaById(id) {
         
         return {
             id: data.id.toString(),
+            namaLengkap: data.nama_lengkap,
             namaPanggilan: data.nama_panggilan,
             password: data.password,
             role: data.role,
@@ -131,6 +133,7 @@ async function getSiswaByNama(nama) {
         
         return {
             id: data.id.toString(),
+            namaLengkap: data.nama_lengkap,
             namaPanggilan: data.nama_panggilan,
             password: data.password,
             role: data.role,
@@ -438,7 +441,7 @@ function exportToCSV() {
         
         return {
             no: '',
-            nama: siswa.namaPanggilan,
+            nama: siswa.namaLengkap,
             status: riwayat ? riwayat.status_absen : 'belum',
             waktu: waktuDisplay,
             alasan: riwayat ? (riwayat.alasan || '-') : '-'
@@ -525,7 +528,7 @@ async function exportBulananToCSV() {
     
     // Looping data siswa
     students.forEach((siswa, index) => {
-        let row = `${index + 1};"${siswa.namaPanggilan}"`;
+        let row = `${index + 1};"${siswa.namaLengkap}"`;
         
         let totalHadir = 0;
         let totalIzin = 0;
