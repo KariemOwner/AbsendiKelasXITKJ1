@@ -1,147 +1,214 @@
 /**
- * app.js - Logika Simulasi Database dan Interaksi UI
+ * app.js - Logika Database Supabase dan Interaksi UI
  * Sistem Absensi Kelas XI TKJ 1
  * 
  * File ini berisi:
- * 1. Inisialisasi database localStorage
- * 2. Fungsi-fungsi untuk mengelola data siswa
+ * 1. Inisialisasi klien Supabase
+ * 2. Fungsi-fungsi untuk mengelola data siswa dari Supabase
  * 3. Fungsi autentikasi dan sesi login
  * 4. Utility functions
  */
 
 // ============================================
-// 1. DATA SISWA - Database Lokal
+// 1. KONFIGURASI SUPABASE
+// ============================================
+
+const SUPABASE_URL = "https://dxoiuulrotueudmnqfxk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_iiTToUfJSZNfe18EErsBHw_SrAFX_Zs";
+
+// Inisialisasi klien Supabase
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================
+// 2. FUNGSI DATABASE SUPABASE
 // ============================================
 
 /**
- * Data default siswa XI TKJ 1
- * Minimal 5 nama panggilan untuk contoh
+ * Inisialisasi database - memastikan koneksi ke Supabase berjalan
+ * Untuk prototype ini, kita tidak perlu init khusus karena data sudah ada di Supabase
  */
-const defaultSiswa = [
-    {
-        id: "admin001",
-        namaPanggilan: "Admin",
-        password: "admin123",
-        role: "admin",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa001",
-        namaPanggilan: "Rizky",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa002",
-        namaPanggilan: "Amanda",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa003",
-        namaPanggilan: "Budi",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa004",
-        namaPanggilan: "Citra",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa005",
-        namaPanggilan: "Dimas",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa006",
-        namaPanggilan: "Eka",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    },
-    {
-        id: "siswa007",
-        namaPanggilan: "Fajar",
-        password: "12345",
-        role: "siswa",
-        statusAbsenHariIni: null
-    }
-];
-
-// ============================================
-// 2. FUNGSI DATABASE LOCALSTORAGE
-// ============================================
-
-/**
- * Inisialisasi database localStorage
- * Membuat data default jika belum ada
- */
-function initDatabase() {
-    // Cek apakah data sudah ada di localStorage
-    const existingData = localStorage.getItem('xi_tkj_1_siswa');
-    
-    if (!existingData) {
-        // Jika belum ada, simpan data default
-        localStorage.setItem('xi_tkj_1_siswa', JSON.stringify(defaultSiswa));
-        console.log('✅ Database initialized with default data');
-    } else {
-        console.log('✅ Database already exists');
-    }
-}
-
-/**
- * Mendapatkan semua data siswa dari localStorage
- * @returns {Array} Array of student objects
- */
-function getSiswa() {
-    const data = localStorage.getItem('xi_tkj_1_siswa');
-    return data ? JSON.parse(data) : [];
-}
-
-/**
- * Mendapatkan siswa berdasarkan ID
- * @param {string} id - ID siswa
- * @returns {Object|null} Student object or null
- */
-function getSiswaById(id) {
-    const students = getSiswa();
-    return students.find(s => s.id === id) || null;
-}
-
-/**
- * Mendapatkan siswa berdasarkan nama panggilan
- * @param {string} nama - Nama panggilan siswa
- * @returns {Object|null} Student object or null
- */
-function getSiswaByNama(nama) {
-    const students = getSiswa();
-    return students.find(s => s.namaPanggilan.toLowerCase() === nama.toLowerCase()) || null;
-}
-
-/**
- * Update data siswa
- * @param {string} id - ID siswa
- * @param {Object} newData - Data baru yang akan diupdate
- * @returns {boolean} Success status
- */
-function updateSiswa(id, newData) {
-    const students = getSiswa();
-    const index = students.findIndex(s => s.id === id);
-    
-    if (index !== -1) {
-        students[index] = { ...students[index], ...newData };
-        localStorage.setItem('xi_tkj_1_siswa', JSON.stringify(students));
+async function initDatabase() {
+    try {
+        // Test koneksi dengan fetch data sederhana
+        const { data, error } = await supabase
+            .from('siswa')
+            .select('id')
+            .limit(1);
+        
+        if (error) {
+            console.error('❌ Error koneksi ke Supabase:', error.message);
+            alert('⚠️ Gagal terhubung ke database. Periksa koneksi internet Anda.');
+            return false;
+        }
+        
+        console.log('✅ Terhubung ke Supabase');
         return true;
+    } catch (err) {
+        console.error('❌ Error inisialisasi:', err.message);
+        alert('⚠️ Terjadi kesalahan saat menghubungkan ke database.');
+        return false;
     }
-    return false;
+}
+
+/**
+ * Mendapatkan semua data siswa dari Supabase
+ * @returns {Promise<Array>} Array of student objects
+ */
+async function getSiswa() {
+    try {
+        const { data, error } = await supabase
+            .from('siswa')
+            .select('*')
+            .order('nama_panggilan', { ascending: true });
+        
+        if (error) throw error;
+        
+        // Transform kolom snake_case ke camelCase untuk konsistensi
+        return data.map(siswa => ({
+            id: siswa.id.toString(),
+            namaPanggilan: siswa.nama_panggilan,
+            password: siswa.password,
+            role: siswa.role,
+            statusAbsenHariIni: siswa.status_absen
+        }));
+    } catch (err) {
+        console.error('❌ Error mengambil data siswa:', err.message);
+        alert('⚠️ Gagal mengambil data siswa dari database.');
+        return [];
+    }
+}
+
+/**
+ * Mendapatkan siswa berdasarkan ID dari Supabase
+ * @param {string} id - ID siswa
+ * @returns {Promise<Object|null>} Student object or null
+ */
+async function getSiswaById(id) {
+    try {
+        const { data, error } = await supabase
+            .from('siswa')
+            .select('*')
+            .eq('id', parseInt(id))
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') return null; // Data not found
+            throw error;
+        }
+        
+        return {
+            id: data.id.toString(),
+            namaPanggilan: data.nama_panggilan,
+            password: data.password,
+            role: data.role,
+            statusAbsenHariIni: data.status_absen
+        };
+    } catch (err) {
+        console.error('❌ Error mengambil data siswa by ID:', err.message);
+        return null;
+    }
+}
+
+/**
+ * Mendapatkan siswa berdasarkan nama panggilan dari Supabase
+ * @param {string} nama - Nama panggilan siswa
+ * @returns {Promise<Object|null>} Student object or null
+ */
+async function getSiswaByNama(nama) {
+    try {
+        const { data, error } = await supabase
+            .from('siswa')
+            .select('*')
+            .ilike('nama_panggilan', nama)
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') return null; // Data not found
+            throw error;
+        }
+        
+        return {
+            id: data.id.toString(),
+            namaPanggilan: data.nama_panggilan,
+            password: data.password,
+            role: data.role,
+            statusAbsenHariIni: data.status_absen
+        };
+    } catch (err) {
+        console.error('❌ Error mengambil data siswa by nama:', err.message);
+        return null;
+    }
+}
+
+/**
+ * Update password siswa di Supabase
+ * @param {string} id - ID siswa
+ * @param {string} newPassword - Password baru
+ * @returns {Promise<boolean>} Success status
+ */
+async function updatePasswordSiswa(id, newPassword) {
+    try {
+        const { error } = await supabase
+            .from('siswa')
+            .update({ password: newPassword })
+            .eq('id', parseInt(id));
+        
+        if (error) throw error;
+        
+        console.log('✅ Password berhasil diupdate');
+        return true;
+    } catch (err) {
+        console.error('❌ Error update password:', err.message);
+        alert('⚠️ Gagal mengubah password.');
+        return false;
+    }
+}
+
+/**
+ * Reset password siswa ke default di Supabase
+ * @param {string} id - ID siswa
+ * @returns {Promise<boolean>} Success status
+ */
+async function resetPasswordSiswa(id) {
+    try {
+        const { error } = await supabase
+            .from('siswa')
+            .update({ password: '12345' })
+            .eq('id', parseInt(id));
+        
+        if (error) throw error;
+        
+        console.log('✅ Password berhasil direset');
+        return true;
+    } catch (err) {
+        console.error('❌ Error reset password:', err.message);
+        alert('⚠️ Gagal mereset password.');
+        return false;
+    }
+}
+
+/**
+ * Update status absen siswa di Supabase
+ * @param {string} id - ID siswa
+ * @param {string} newStatus - Status baru (hadir, izin, sakit, alpa)
+ * @returns {Promise<boolean>} Success status
+ */
+async function updateStatusAbsen(id, newStatus) {
+    try {
+        const { error } = await supabase
+            .from('siswa')
+            .update({ status_absen: newStatus })
+            .eq('id', parseInt(id));
+        
+        if (error) throw error;
+        
+        console.log(`✅ Status absen berhasil diubah menjadi ${newStatus}`);
+        return true;
+    } catch (err) {
+        console.error('❌ Error update status absen:', err.message);
+        alert('⚠️ Gagal mengubah status absen.');
+        return false;
+    }
 }
 
 // ============================================
@@ -152,7 +219,7 @@ function updateSiswa(id, newData) {
  * Handle login form submission
  * @param {Event} e - Form submit event
  */
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     
     const namaPilihan = document.getElementById('namaPanggilan').value;
@@ -164,8 +231,8 @@ function handleLogin(e) {
         return;
     }
     
-    // Cari siswa berdasarkan nama
-    const siswa = getSiswaByNama(namaPilihan);
+    // Cari siswa berdasarkan nama dari Supabase
+    const siswa = await getSiswaByNama(namaPilihan);
     
     if (!siswa) {
         alert('❌ Siswa tidak ditemukan!');
@@ -246,52 +313,30 @@ function getTodayString() {
 /**
  * Load opsi siswa ke dropdown login
  * Hanya menampilkan siswa dengan role 'siswa'
+ * Menggunakan async/await untuk fetch dari Supabase
  */
-function loadSiswaOptions() {
+async function loadSiswaOptions() {
     const selectElement = document.getElementById('namaPanggilan');
     
     if (!selectElement) return;
     
-    const students = getSiswa();
-    
     // Clear options except the first one
     selectElement.innerHTML = '<option value="">-- Pilih Nama --</option>';
     
-    // Add student options (exclude admin)
-    students
-        .filter(s => s.role === 'siswa')
-        .forEach(siswa => {
-            const option = document.createElement('option');
-            option.value = siswa.namaPanggilan;
-            option.textContent = siswa.namaPanggilan;
-            selectElement.appendChild(option);
-        });
-}
-
-/**
- * Reset database ke data default
- * Berguna untuk testing atau jika terjadi masalah
- */
-function resetDatabase() {
-    if (confirm('⚠️ PERINGATAN: Ini akan menghapus semua data absensi dan mengembalikan password ke default. Lanjutkan?')) {
-        localStorage.removeItem('xi_tkj_1_siswa');
+    try {
+        const students = await getSiswa();
         
-        // Hapus semua data absensi (format: absen_YYYY-MM-DD)
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('absen_')) {
-                keysToRemove.push(key);
-            }
-        }
-        
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        // Re-initialize
-        initDatabase();
-        
-        alert('✅ Database berhasil direset!');
-        location.reload();
+        // Add student options (exclude admin)
+        students
+            .filter(s => s.role === 'siswa')
+            .forEach(siswa => {
+                const option = document.createElement('option');
+                option.value = siswa.namaPanggilan;
+                option.textContent = siswa.namaPanggilan;
+                selectElement.appendChild(option);
+            });
+    } catch (err) {
+        console.error('❌ Error loading siswa options:', err.message);
     }
 }
 
@@ -315,23 +360,13 @@ document.addEventListener('DOMContentLoaded', () => {
  * Debug mode - untuk development
  * Akses melalui console: debugMode()
  */
-function debugMode() {
+async function debugMode() {
     console.log('=== DEBUG MODE ===');
     console.log('Current Session:', sessionStorage.getItem('currentUser'));
-    console.log('All Students:', getSiswa());
-    console.log('Today\'s Key:', getTodayString());
-    console.log('All LocalStorage Keys:', Object.keys(localStorage));
+    console.log('All Students:', await getSiswa());
+    console.log('Today\'s Date:', getTodayString());
+    console.log('Supabase Client:', supabase ? 'Connected' : 'Not Connected');
     console.log('==================');
-}
-
-/**
- * Helper untuk mendapatkan data absensi hari ini
- * @returns {Object} Absensi data
- */
-function getTodayAbsensi() {
-    const today = getTodayString();
-    const statusKey = `absen_${today}`;
-    return JSON.parse(localStorage.getItem(statusKey)) || {};
 }
 
 /**
@@ -340,13 +375,15 @@ function getTodayAbsensi() {
 window.initDatabase = initDatabase;
 window.getSiswa = getSiswa;
 window.getSiswaById = getSiswaById;
+window.getSiswaByNama = getSiswaByNama;
 window.handleLogin = handleLogin;
 window.checkAuth = checkAuth;
 window.logout = logout;
 window.getTodayString = getTodayString;
 window.loadSiswaOptions = loadSiswaOptions;
 window.debugMode = debugMode;
-window.getTodayAbsensi = getTodayAbsensi;
-window.resetDatabase = resetDatabase;
+window.updatePasswordSiswa = updatePasswordSiswa;
+window.resetPasswordSiswa = resetPasswordSiswa;
+window.updateStatusAbsen = updateStatusAbsen;
 
-console.log('✅ app.js loaded successfully');
+console.log('✅ app.js loaded successfully - Connected to Supabase');
