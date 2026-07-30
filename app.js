@@ -315,7 +315,7 @@ function getTodayString() {
  * Hanya menampilkan siswa dengan role 'siswa'
  * Menggunakan async/await untuk fetch dari Supabase
  */
-async function loadSiswaOptions() {
+async function loadSiswa() {
     const selectElement = document.getElementById('namaPanggilan');
     
     if (!selectElement) return;
@@ -324,17 +324,26 @@ async function loadSiswaOptions() {
     selectElement.innerHTML = '<option value="">-- Pilih Nama --</option>';
     
     try {
-        const students = await getSiswa();
+        // Query langsung ke tabel siswa
+        const { data, error } = await supabase.from('siswa').select('*');
         
-        // Add student options (exclude admin)
-        students
-            .filter(s => s.role === 'siswa')
-            .forEach(siswa => {
+        if (error) {
+            console.error('❌ Error loading siswa:', error.message);
+            return;
+        }
+        
+        // Loop untuk memasukkan elemen <option> ke dropdown
+        data.forEach(siswa => {
+            // Hanya tampilkan siswa dengan role 'siswa'
+            if (siswa.role === 'siswa') {
                 const option = document.createElement('option');
-                option.value = siswa.namaPanggilan;
-                option.textContent = siswa.namaPanggilan;
+                option.value = siswa.nama_panggilan;
+                option.textContent = siswa.nama_panggilan;
                 selectElement.appendChild(option);
-            });
+            }
+        });
+        
+        console.log(`✅ Berhasil memuat ${data.filter(s => s.role === 'siswa').length} siswa ke dropdown`);
     } catch (err) {
         console.error('❌ Error loading siswa options:', err.message);
     }
@@ -347,9 +356,11 @@ async function loadSiswaOptions() {
 /**
  * Auto-init ketika DOM loaded
  * Pastikan database terinisialisasi di semua halaman
+ * Load daftar siswa ke dropdown login
  */
 document.addEventListener('DOMContentLoaded', () => {
     initDatabase();
+    loadSiswa();
 });
 
 // ============================================
@@ -380,7 +391,8 @@ window.handleLogin = handleLogin;
 window.checkAuth = checkAuth;
 window.logout = logout;
 window.getTodayString = getTodayString;
-window.loadSiswaOptions = loadSiswaOptions;
+window.loadSiswa = loadSiswa;
+window.loadSiswaOptions = loadSiswa; // Alias untuk kompatibilitas
 window.debugMode = debugMode;
 window.updatePasswordSiswa = updatePasswordSiswa;
 window.resetPasswordSiswa = resetPasswordSiswa;
