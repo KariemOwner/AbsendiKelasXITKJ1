@@ -60,6 +60,29 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Filter Tanggal & Export -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
+                    <label for="tanggalFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        <i class="fas fa-calendar-alt mr-2"></i>Pilih Tanggal:
+                    </label>
+                    <input 
+                        type="date" 
+                        id="tanggalFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    >
+                </div>
+                <button 
+                    onclick="exportToCSV()"
+                    class="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all shadow-lg flex items-center space-x-2"
+                >
+                    <i class="fas fa-file-csv"></i>
+                    <span>Export Data (CSV)</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Summary Cards -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
             <!-- Hadir -->
@@ -122,8 +145,8 @@
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-gray-800">Rekap Absensi Hari Ini</h2>
-                    <p class="text-sm text-gray-500" id="tanggalHariIni">-</p>
+                    <h2 class="text-xl font-bold text-gray-800">Rekap Absensi</h2>
+                    <p class="text-sm text-gray-500" id="tanggalTampil">-</p>
                 </div>
             </div>
             
@@ -152,8 +175,7 @@
     <script src="app.js"></script>
     <script>
         let currentUser = null;
-        let today = '';
-        let statusKey = '';
+        let selectedDate = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             // Cek sesi login
@@ -163,18 +185,31 @@
             // Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
             tampilkanBannerSambutan(currentUser.namaPanggilan);
 
-            // Set tanggal hari ini
-            today = getTodayString();
-            statusKey = `absen_${today}`;
+            // Set tanggal hari ini sebagai default
+            selectedDate = getTodayString();
+            document.getElementById('tanggalFilter').value = selectedDate;
             
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('tanggalHariIni').textContent = now.toLocaleDateString('id-ID', options);
+            // Update tampilan tanggal
+            updateTanggalTampil(selectedDate);
 
             // Render tabel dan summary
             renderTabel();
             updateSummary();
+
+            // Event listener untuk perubahan tanggal
+            document.getElementById('tanggalFilter').addEventListener('change', (e) => {
+                selectedDate = e.target.value;
+                updateTanggalTampil(selectedDate);
+                renderTabel();
+                updateSummary();
+            });
         });
+
+        function updateTanggalTampil(tanggal) {
+            const dateObj = new Date(tanggal + 'T00:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('tanggalTampil').textContent = dateObj.toLocaleDateString('id-ID', options);
+        }
 
         /**
          * Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
@@ -219,10 +254,26 @@
 
         async function renderTabel() {
             const students = await getSiswa();
+            const riwayatData = await getRiwayatAbsenByTanggal(selectedDate);
             const tbody = document.getElementById('tabelSiswa');
             
-            tbody.innerHTML = students.map((siswa, index) => {
-                const statusConfig = getStatusConfig(siswa.statusAbsenHariIni || 'belum_absen');
+            // Simpan data untuk export
+            window.siswaData = students;
+            window.riwayatData = riwayatData;
+            
+            // Gabungkan data siswa dengan riwayat absen
+            const mergedData = students.map(siswa => {
+                const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
+                return {
+                    ...siswa,
+                    statusAbsen: riwayat ? riwayat.status_absen : 'belum',
+                    alasan: riwayat ? (riwayat.alasan || '-') : '-',
+                    waktu: '-'
+                };
+            });
+            
+            tbody.innerHTML = mergedData.map((siswa, index) => {
+                const statusConfig = getStatusConfig(siswa.statusAbsen);
                 
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
@@ -236,36 +287,36 @@
                                 ${statusConfig.label}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${siswa.waktu}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${siswa.alasan}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-wrap gap-2">
                                 <!-- Status Pills -->
                                 <div class="flex gap-1">
                                     <button 
-                                        onclick="updateStatus('${siswa.id}', 'hadir')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'hadir' ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}"
+                                        onclick="updateStatus('${siswa.id}', '${siswa.namaPanggilan}', 'hadir')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsen === 'hadir' ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}"
                                         title="Hadir"
                                     >
                                         H
                                     </button>
                                     <button 
-                                        onclick="updateStatus('${siswa.id}', 'izin')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'izin' ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}"
+                                        onclick="updateStatus('${siswa.id}', '${siswa.namaPanggilan}', 'izin')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsen === 'izin' ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}"
                                         title="Izin"
                                     >
                                         I
                                     </button>
                                     <button 
-                                        onclick="updateStatus('${siswa.id}', 'sakit')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'sakit' ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}"
+                                        onclick="updateStatus('${siswa.id}', '${siswa.namaPanggilan}', 'sakit')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsen === 'sakit' ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}"
                                         title="Sakit"
                                     >
                                         S
                                     </button>
                                     <button 
-                                        onclick="updateStatus('${siswa.id}', 'alpa')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'alpa' ? 'bg-red-500 text-white ring-2 ring-red-300' : 'bg-red-100 text-red-700 hover:bg-red-200'}"
+                                        onclick="updateStatus('${siswa.id}', '${siswa.namaPanggilan}', 'alpa')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsen === 'alpa' ? 'bg-red-500 text-white ring-2 ring-red-300' : 'bg-red-100 text-red-700 hover:bg-red-200'}"
                                         title="Alpa"
                                     >
                                         A
@@ -289,12 +340,15 @@
 
         async function updateSummary() {
             const students = await getSiswa();
+            const riwayatData = await getRiwayatAbsenByTanggal(selectedDate);
             
             let countHadir = 0, countIzin = 0, countSakit = 0, countAlpa = 0, countBelum = 0;
             
             students.forEach(siswa => {
-                const status = siswa.statusAbsenHariIni || 'belum_absen';
-                if (status === 'belum_absen') {
+                const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
+                const status = riwayat ? riwayat.status_absen : 'belum';
+                
+                if (status === 'belum') {
                     countBelum++;
                 } else if (status === 'hadir') {
                     countHadir++;
@@ -314,8 +368,8 @@
             document.getElementById('countBelum').textContent = countBelum;
         }
 
-        async function updateStatus(studentId, newStatus) {
-            const success = await updateStatusAbsen(studentId, newStatus);
+        async function updateStatus(studentId, namaSiswa, newStatus) {
+            const success = await upsertRiwayatAbsen(namaSiswa, selectedDate, newStatus);
             
             if (success) {
                 // Re-render tabel dan summary setelah update berhasil
@@ -339,8 +393,7 @@
         }
 
         function getStatusConfig(status) {
-            // Normalisasi status dari database (belum_absen -> belum)
-            const normalizedStatus = status.replace('_absen', '');
+            // Status sekarang langsung: 'hadir', 'izin', 'sakit', 'alpa', 'belum'
             const configs = {
                 hadir: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hadir' },
                 izin: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Izin' },
@@ -348,7 +401,51 @@
                 alpa: { bg: 'bg-red-100', text: 'text-red-800', label: 'Alpa' },
                 belum: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Belum' }
             };
-            return configs[normalizedStatus] || configs.belum;
+            return configs[status] || configs.belum;
+        }
+
+        function exportToCSV() {
+            // Ambil data dari tabel yang sedang tampil
+            const students = window.siswaData || [];
+            const riwayatData = window.riwayatData || [];
+            
+            // CSV Header
+            let csvContent = "No,Nama Siswa,Status,Waktu,Alasan\n";
+            
+            // Gabungkan data seperti di renderTabel
+            const mergedData = students.map(siswa => {
+                const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
+                return {
+                    no: '',
+                    nama: siswa.namaPanggilan,
+                    status: riwayat ? riwayat.status_absen : 'belum',
+                    waktu: '-',
+                    alasan: riwayat ? (riwayat.alasan || '-') : '-'
+                };
+            });
+            
+            // Add data rows
+            mergedData.forEach((row, index) => {
+                row.no = index + 1;
+                csvContent += `${row.no},"${row.nama}",${row.status},${row.waktu},"${row.alasan}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            // Format filename: Absensi_TKJ1_[Tanggal].csv
+            const formattedDate = selectedDate.replace(/-/g, '_');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Absensi_TKJ1_${formattedDate}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('✅ Data berhasil diexport sebagai CSV!');
         }
     </script>
 </body>

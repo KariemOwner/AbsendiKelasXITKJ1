@@ -289,12 +289,16 @@
             const statusContainer = document.getElementById('statusContainer');
             const absenContainer = document.getElementById('absenContainer');
             
-            // Ambil data terbaru dari Supabase
-            const student = await getSiswaById(currentUser.id);
+            // Ambil data dari riwayat_absen untuk hari ini
+            const today = getTodayString();
+            const riwayatData = await getRiwayatAbsenByTanggal(today);
             
-            if (student && student.statusAbsenHariIni && student.statusAbsenHariIni !== 'belum_absen') {
+            // Cari data siswa ini di riwayat
+            const siswaRecord = riwayatData.find(r => r.nama_panggilan === currentUser.namaPanggilan);
+            
+            if (siswaRecord && siswaRecord.status_absen) {
                 // Sudah absen
-                const status = student.statusAbsenHariIni;
+                const status = siswaRecord.status_absen;
                 let statusColor = 'gray';
                 let statusIcon = 'question-circle';
                 let statusText = 'Belum Absen';
@@ -344,8 +348,9 @@
         }
 
         function absenHadir() {
-            // Update status_absen di Supabase
-            updateStatusAbsen(currentUser.id, 'hadir')
+            // Upsert ke tabel riwayat_absen
+            const today = getTodayString();
+            upsertRiwayatAbsen(currentUser.namaPanggilan, today, 'hadir')
                 .then(success => {
                     if (success) {
                         alert('✅ Absensi berhasil! Anda telah tercatat HADIR.');
@@ -360,8 +365,9 @@
             const jenisIzin = document.getElementById('jenisIzin').value;
             const alasanIzin = document.getElementById('alasanIzin').value;
 
-            // Update status_absen di Supabase
-            const success = await updateStatusAbsen(currentUser.id, jenisIzin);
+            // Upsert ke tabel riwayat_absen
+            const today = getTodayString();
+            const success = await upsertRiwayatAbsen(currentUser.namaPanggilan, today, jenisIzin);
             
             if (success) {
                 closeModal('izinModal');

@@ -190,7 +190,7 @@ async function resetPasswordSiswa(id) {
 }
 
 /**
- * Update status absen siswa di Supabase
+ * Update status absen siswa di Supabase (untuk tabel siswa - login only)
  * @param {string} id - ID siswa
  * @param {string} newStatus - Status baru (hadir, izin, sakit, alpa)
  * @returns {Promise<boolean>} Success status
@@ -210,6 +210,57 @@ async function updateStatusAbsen(id, newStatus) {
         console.error('❌ Error update status absen:', err.message);
         alert('⚠️ Gagal mengubah status absen.');
         return false;
+    }
+}
+
+/**
+ * Upsert data absensi ke tabel riwayat_absen
+ * @param {string} namaPanggilan - Nama panggilan siswa
+ * @param {string} tanggal - Tanggal dalam format YYYY-MM-DD
+ * @param {string} statusAbsen - Status absen (hadir, izin, sakit, alpa)
+ * @returns {Promise<boolean>} Success status
+ */
+async function upsertRiwayatAbsen(namaPanggilan, tanggal, statusAbsen) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('riwayat_absen')
+            .upsert({ 
+                nama_panggilan: namaPanggilan, 
+                tanggal: tanggal, 
+                status_absen: statusAbsen 
+            }, { 
+                onConflict: 'nama_panggilan, tanggal' 
+            });
+        
+        if (error) throw error;
+        
+        console.log(`✅ Riwayat absen berhasil di-upsert: ${namaPanggilan} - ${tanggal} - ${statusAbsen}`);
+        return true;
+    } catch (err) {
+        console.error('❌ Error upsert riwayat absen:', err.message);
+        alert('⚠️ Gagal menyimpan riwayat absen.');
+        return false;
+    }
+}
+
+/**
+ * Ambil data riwayat absen berdasarkan tanggal
+ * @param {string} tanggal - Tanggal dalam format YYYY-MM-DD
+ * @returns {Promise<Array>} Array of attendance records
+ */
+async function getRiwayatAbsenByTanggal(tanggal) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('riwayat_absen')
+            .select('*')
+            .eq('tanggal', tanggal);
+        
+        if (error) throw error;
+        
+        return data || [];
+    } catch (err) {
+        console.error('❌ Error mengambil riwayat absen:', err.message);
+        return [];
     }
 }
 
@@ -332,5 +383,7 @@ window.debugMode = debugMode;
 window.updatePasswordSiswa = updatePasswordSiswa;
 window.resetPasswordSiswa = resetPasswordSiswa;
 window.updateStatusAbsen = updateStatusAbsen;
+window.upsertRiwayatAbsen = upsertRiwayatAbsen;
+window.getRiwayatAbsenByTanggal = getRiwayatAbsenByTanggal;
 
 console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
