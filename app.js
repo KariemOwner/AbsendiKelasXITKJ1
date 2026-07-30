@@ -675,11 +675,22 @@ async function sendMessage() {
         const indicator = document.getElementById('typingIndicator');
         if (indicator) indicator.remove();
         
-        if (!response.ok) {
+        // Coba parse response JSON untuk error handling yang lebih baik
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            // Jika response bukan JSON, lempar error dengan status
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
+        if (!response.ok) {
+            // Simpan responseData di error object untuk digunakan di catch block
+            const error = new Error(data.error || `HTTP error! status: ${response.status}`);
+            error.responseData = data;
+            throw error;
+        }
+        
         const aiReply = data.reply || 'Maaf, terjadi kesalahan.';
         
         // Tampilkan balasan AI
@@ -699,12 +710,25 @@ async function sendMessage() {
         const indicator = document.getElementById('typingIndicator');
         if (indicator) indicator.remove();
         
+        // Coba ambil pesan error dari response jika ada
+        let errorMessage = '⚠️ Maaf, gagal menghubungi AI. Silakan coba lagi.';
+        
+        // Jika error memiliki response JSON (dari backend)
+        if (error.responseData && typeof error.responseData === 'object') {
+            // Gunakan pesan error dari backend jika tersedia
+            errorMessage = error.responseData.error || errorMessage;
+            // Tambahkan emoji jika belum ada
+            if (!errorMessage.startsWith('⚠️') && !errorMessage.startsWith('❌')) {
+                errorMessage = '⚠️ ' + errorMessage;
+            }
+        }
+        
         // Tampilkan pesan error
         const errorBubble = document.createElement('div');
         errorBubble.className = 'flex justify-start mb-3';
         errorBubble.innerHTML = `
             <div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                ⚠️ Maaf, gagal menghubungi AI. Silakan coba lagi.
+                ${escapeHtml(errorMessage)}
             </div>
         `;
         chatMessages.appendChild(errorBubble);

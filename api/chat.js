@@ -1,62 +1,132 @@
+const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+const SYSTEM_PROMPT = "Kamu adalah asisten cerdas kelas XI TKJ 1. Jawab santai, gaul, tapi sopan. Singkat padat.";
+
+/**
+ * Panggil API Qwen (DashScope)
+ * @param {string} message - Pesan dari user
+ * @returns {Promise<string>} Response dari AI
+ */
+async function callQwen(message) {
+  const apiKey = process.env.QWEN_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('QWEN_API_KEY tidak ditemukan');
+  }
+  
+  const response = await fetch(QWEN_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'qwen-plus',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Qwen API Error ${response.status}: ${JSON.stringify(errorData)}`);
+  }
+  
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || 'Maaf, saya tidak bisa memproses permintaan Anda.';
+}
+
+/**
+ * Panggil API Groq sebagai fallback
+ * @param {string} message - Pesan dari user
+ * @returns {Promise<string>} Response dari AI
+ */
+async function callGroq(message) {
+  const apiKey = process.env.GROQ_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY tidak ditemukan');
+  }
+  
+  const response = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama3-8b-8192',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Groq API Error ${response.status}: ${JSON.stringify(errorData)}`);
+  }
+  
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || 'Maaf, saya tidak bisa memproses permintaan Anda.';
+}
+
+/**
+ * Timeout wrapper untuk promise
+ * @param {Promise} promise - Promise yang dibungkus
+ * @param {number} ms - Timeout dalam milidetik
+ * @returns {Promise} Promise dengan timeout
+ */
+function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Timeout setelah ' + ms + 'ms')), ms);
+  });
+  return Promise.race([promise, timeout]);
+}
+
 module.exports = async (req, res) => {
   // Hanya terima method POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
+  
   const { message } = req.body;
-
+  
   if (!message || typeof message !== 'string' || message.trim() === '') {
     return res.status(400).json({ error: 'Message is required' });
   }
-
-  const apiKey = process.env.QWEN_API_KEY;
-
-  if (!apiKey) {
-    console.error('QWEN_API_KEY tidak ditemukan di environment variables');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
+  
   try {
-    const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'qwen-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'Kamu adalah Qwen, asisten AI pintar dan ramah khusus untuk siswa dan guru kelas XI TKJ 1. Gunakan bahasa Indonesia gaul yang asik tapi tetap sopan. Jawab dengan singkat dan padat.'
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('DashScope API Error:', response.status, errorData);
-      return res.status(response.status).json({ 
-        error: 'Gagal menghubungi AI service',
-        details: errorData 
-      });
+    let aiResponse;
+    
+    // Coba Qwen dulu dengan timeout 8 detik
+    try {
+      console.log('🔄 Mencoba Qwen API...');
+      aiResponse = await withTimeout(callQwen(message), 8000);
+      console.log('✅ Qwen API berhasil');
+    } catch (qwenError) {
+      console.warn('⚠️ Qwen API gagal:', qwenError.message);
+      console.log('🔄 Beralih ke Groq API sebagai fallback...');
+      
+      // Fallback ke Groq
+      aiResponse = await callGroq(message);
+      console.log('✅ Groq API berhasil');
     }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || 'Maaf, saya tidak bisa memproses permintaan Anda.';
-
+    
     return res.status(200).json({ reply: aiResponse });
-
+    
   } catch (error) {
-    console.error('Internal Server Error:', error.message);
-    return res.status(500).json({ error: 'Terjadi kesalahan pada server' });
+    console.error('❌ Semua API gagal:', error.message);
+    return res.status(500).json({ 
+      error: 'Maaf, sistem AI sedang tidur siang. Coba lagi nanti ya!' 
+    });
   }
 };
