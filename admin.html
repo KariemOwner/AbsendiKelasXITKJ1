@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Absensi XI TKJ 1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-shield text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Panel Admin</h1>
+                        <p class="text-sm text-gray-500">XI TKJ 1</p>
+                    </div>
+                </div>
+                <button 
+                    onclick="logout()"
+                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
+                >
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+            <!-- Hadir -->
+            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">Hadir</p>
+                <p class="text-3xl font-bold text-green-600" id="countHadir">0</p>
+            </div>
+
+            <!-- Izin -->
+            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-file-alt text-blue-500"></i>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">Izin</p>
+                <p class="text-3xl font-bold text-blue-600" id="countIzin">0</p>
+            </div>
+
+            <!-- Sakit -->
+            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-bed text-yellow-500"></i>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">Sakit</p>
+                <p class="text-3xl font-bold text-yellow-600" id="countSakit">0</p>
+            </div>
+
+            <!-- Alpa -->
+            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times-circle text-red-500"></i>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">Alpa</p>
+                <p class="text-3xl font-bold text-red-600" id="countAlpa">0</p>
+            </div>
+
+            <!-- Belum Absen -->
+            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-question-circle text-gray-500"></i>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">Belum</p>
+                <p class="text-3xl font-bold text-gray-600" id="countBelum">0</p>
+            </div>
+        </div>
+
+        <!-- Tabel Rekap -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800">Rekap Absensi Hari Ini</h2>
+                    <p class="text-sm text-gray-500" id="tanggalHariIni">-</p>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Siswa</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi Sekretaris</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200" id="tabelSiswa">
+                        <!-- Data akan diisi oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+        let today = '';
+        let statusKey = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cek sesi login
+            currentUser = checkAuth('admin');
+            if (!currentUser) return;
+
+            // Set tanggal hari ini
+            today = getTodayString();
+            statusKey = `absen_${today}`;
+            
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('tanggalHariIni').textContent = now.toLocaleDateString('id-ID', options);
+
+            // Render tabel dan summary
+            renderTabel();
+            updateSummary();
+        });
+
+        function renderTabel() {
+            const students = getSiswa();
+            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+            const tbody = document.getElementById('tabelSiswa');
+            
+            tbody.innerHTML = students.map((siswa, index) => {
+                const statusData = todayData[siswa.id] || { status: 'belum', waktu: '-', alasan: '-' };
+                const statusConfig = getStatusConfig(statusData.status);
+                
+                return `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-medium text-gray-900">${siswa.namaPanggilan}</div>
+                            <div class="text-sm text-gray-500">ID: ${siswa.id}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusConfig.bg} ${statusConfig.text}">
+                                ${statusConfig.label}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusData.waktu}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${statusData.alasan || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex flex-wrap gap-2">
+                                <!-- Status Pills -->
+                                <div class="flex gap-1">
+                                    <button 
+                                        onclick="updateStatus('${siswa.id}', 'hadir')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'hadir' ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}"
+                                        title="Hadir"
+                                    >
+                                        H
+                                    </button>
+                                    <button 
+                                        onclick="updateStatus('${siswa.id}', 'izin')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'izin' ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}"
+                                        title="Izin"
+                                    >
+                                        I
+                                    </button>
+                                    <button 
+                                        onclick="updateStatus('${siswa.id}', 'sakit')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'sakit' ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}"
+                                        title="Sakit"
+                                    >
+                                        S
+                                    </button>
+                                    <button 
+                                        onclick="updateStatus('${siswa.id}', 'alpa')"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'alpa' ? 'bg-red-500 text-white ring-2 ring-red-300' : 'bg-red-100 text-red-700 hover:bg-red-200'}"
+                                        title="Alpa"
+                                    >
+                                        A
+                                    </button>
+                                </div>
+                                
+                                <!-- Reset Password Button -->
+                                <button 
+                                    onclick="resetPassword('${siswa.id}', '${siswa.namaPanggilan}')"
+                                    class="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                                    title="Reset Password"
+                                >
+                                    <i class="fas fa-key"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateSummary() {
+            const students = getSiswa();
+            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+            
+            let countHadir = 0, countIzin = 0, countSakit = 0, countAlpa = 0, countBelum = 0;
+            
+            students.forEach(siswa => {
+                const statusData = todayData[siswa.id];
+                if (!statusData || statusData.status === 'belum') {
+                    countBelum++;
+                } else if (statusData.status === 'hadir') {
+                    countHadir++;
+                } else if (statusData.status === 'izin') {
+                    countIzin++;
+                } else if (statusData.status === 'sakit') {
+                    countSakit++;
+                } else if (statusData.status === 'alpa') {
+                    countAlpa++;
+                }
+            });
+            
+            document.getElementById('countHadir').textContent = countHadir;
+            document.getElementById('countIzin').textContent = countIzin;
+            document.getElementById('countSakit').textContent = countSakit;
+            document.getElementById('countAlpa').textContent = countAlpa;
+            document.getElementById('countBelum').textContent = countBelum;
+        }
+
+        function updateStatus(studentId, newStatus) {
+            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+            
+            todayData[studentId] = {
+                status: newStatus,
+                waktu: new Date().toLocaleString('id-ID'),
+                alasan: newStatus !== 'hadir' && todayData[studentId] ? todayData[studentId].alasan : ''
+            };
+            
+            localStorage.setItem(statusKey, JSON.stringify(todayData));
+            
+            renderTabel();
+            updateSummary();
+            
+            // Feedback visual
+            const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
+            showNotification(`Status berhasil diubah menjadi ${statusNames[newStatus]}`);
+        }
+
+        function resetPassword(studentId, namaSiswa) {
+            if (confirm(`Apakah Anda yakin ingin mereset password ${namaSiswa} ke default (12345)?`)) {
+                const students = getSiswa();
+                const studentIndex = students.findIndex(s => s.id === studentId);
+                
+                if (studentIndex !== -1) {
+                    students[studentIndex].password = '12345';
+                    localStorage.setItem('xi_tkj_1_siswa', JSON.stringify(students));
+                    
+                    showNotification(`Password ${namaSiswa} berhasil direset!`);
+                }
+            }
+        }
+
+        function getStatusConfig(status) {
+            const configs = {
+                hadir: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hadir' },
+                izin: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Izin' },
+                sakit: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sakit' },
+                alpa: { bg: 'bg-red-100', text: 'text-red-800', label: 'Alpa' },
+                belum: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Belum' }
+            };
+            return configs[status] || configs.belum;
+        }
+
+        function showNotification(message) {
+            // Buat notifikasi sederhana menggunakan alert untuk prototype
+            // Bisa dikembangkan dengan toast notification yang lebih elegan
+            console.log('Notification:', message);
+        }
+    </script>
+</body>
+</html>

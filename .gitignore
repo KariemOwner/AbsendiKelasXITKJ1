@@ -1,0 +1,41 @@
+```gitignore
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+.env
+.env.local
+.env.*
+
+# Build directories
+dist/
+build/
+target/
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+```
+
+Wait, let me reconsider the input. The added files are only HTML and JS files (admin.html, app.js, index.html, siswa.html), which are source code files. There are no build artifacts, dependencies, or temporary files in the change list.
+
+(empty — output nothing)
