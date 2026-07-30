@@ -257,7 +257,7 @@
             if (!currentUser) return;
 
             // Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
-            tampilkanBannerSambutan(currentUser.namaPanggilan);
+            tampilkanBannerSambutan(currentUser.namaLengkap);
 
             // Set tanggal hari ini sebagai default
             selectedDate = getTodayString();
@@ -287,7 +287,7 @@
 
         /**
          * Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
-         * @param {string} nama - Nama panggilan admin
+         * @param {string} nama - Nama lengkap admin (untuk tampilan yang lebih formal)
          */
         function tampilkanBannerSambutan(nama) {
             const now = new Date();
