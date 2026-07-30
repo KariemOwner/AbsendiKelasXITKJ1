@@ -365,9 +365,9 @@
             const jenisIzin = document.getElementById('jenisIzin').value;
             const alasanIzin = document.getElementById('alasanIzin').value;
 
-            // Upsert ke tabel riwayat_absen
+            // Upsert ke tabel riwayat_absen dengan alasan
             const today = getTodayString();
-            const success = await upsertRiwayatAbsen(currentUser.namaPanggilan, today, jenisIzin);
+            const success = await upsertRiwayatAbsen(currentUser.namaPanggilan, today, jenisIzin, alasanIzin);
             
             if (success) {
                 closeModal('izinModal');
