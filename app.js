@@ -110,16 +110,17 @@ async function getSiswaById(id) {
 }
 
 /**
- * Mendapatkan siswa berdasarkan nama panggilan dari Supabase
+ * Mendapatkan siswa berdasarkan nama panggilan dari Supabase (case-insensitive)
  * @param {string} nama - Nama panggilan siswa
  * @returns {Promise<Object|null>} Student object or null
  */
 async function getSiswaByNama(nama) {
     try {
+        // Gunakan ilike untuk pencarian case-insensitive
         const { data, error } = await supabaseClient
             .from('siswa')
             .select('*')
-            .ilike('nama_panggilan', nama)
+            .ilike('nama_panggilan', nama.trim())
             .single();
         
         if (error) {
@@ -216,44 +217,13 @@ async function updateStatusAbsen(id, newStatus) {
 // ============================================
 
 /**
- * Handle login form submission
+ * Handle login form submission (deprecated - now handled in index.html)
+ * Fungsi ini dipertahankan untuk kompatibilitas, tetapi tidak digunakan lagi
+ * karena logika login sekarang di-handle langsung di index.html dengan UI error yang lebih baik
  * @param {Event} e - Form submit event
  */
 async function handleLogin(e) {
-    e.preventDefault();
-    
-    const namaPilihan = document.getElementById('namaPanggilan').value;
-    const passwordInput = document.getElementById('password').value;
-    
-    // Validasi input
-    if (!namaPilihan || !passwordInput) {
-        alert('❌ Harap isi semua field!');
-        return;
-    }
-    
-    // Cari siswa berdasarkan nama dari Supabase
-    const siswa = await getSiswaByNama(namaPilihan);
-    
-    if (!siswa) {
-        alert('❌ Siswa tidak ditemukan!');
-        return;
-    }
-    
-    // Cek password
-    if (siswa.password !== passwordInput) {
-        alert('❌ Password salah!');
-        return;
-    }
-    
-    // Login berhasil - simpan sesi
-    sessionStorage.setItem('currentUser', JSON.stringify(siswa));
-    
-    // Redirect berdasarkan role
-    if (siswa.role === 'admin') {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'siswa.html';
-    }
+    console.log('handleLogin() deprecated - gunakan logic di index.html');
 }
 
 /**
@@ -311,43 +281,10 @@ function getTodayString() {
 }
 
 /**
- * Load opsi siswa ke dropdown login
- * Hanya menampilkan siswa dengan role 'siswa'
- * Menggunakan async/await untuk fetch dari Supabase
+ * Fungsi loadSiswa dihapus karena tidak lagi menggunakan dropdown
+ * Diganti dengan input text yang memungkinkan user mengetik nama langsung
+ * Fungsi ini dihapus sepenuhnya dari kode
  */
-async function loadSiswa() {
-    const selectElement = document.getElementById('namaPanggilan');
-    
-    if (!selectElement) return;
-    
-    // Clear options except the first one
-    selectElement.innerHTML = '<option value="">-- Pilih Nama --</option>';
-    
-    try {
-        // Query langsung ke tabel siswa
-        const { data, error } = await supabaseClient.from('siswa').select('*');
-        
-        if (error) {
-            console.error('❌ Error loading siswa:', error.message);
-            return;
-        }
-        
-        // Loop untuk memasukkan elemen <option> ke dropdown
-        data.forEach(siswa => {
-            // Hanya tampilkan siswa dengan role 'siswa'
-            if (siswa.role === 'siswa') {
-                const option = document.createElement('option');
-                option.value = siswa.nama_panggilan;
-                option.textContent = siswa.nama_panggilan;
-                selectElement.appendChild(option);
-            }
-        });
-        
-        console.log(`✅ Berhasil memuat ${data.filter(s => s.role === 'siswa').length} siswa ke dropdown`);
-    } catch (err) {
-        console.error('❌ Error loading siswa options:', err.message);
-    }
-}
 
 // ============================================
 // 5. EVENT LISTENERS GLOBAL
@@ -356,11 +293,9 @@ async function loadSiswa() {
 /**
  * Auto-init ketika DOM loaded
  * Pastikan database terinisialisasi di semua halaman
- * Load daftar siswa ke dropdown login
  */
 document.addEventListener('DOMContentLoaded', () => {
     initDatabase();
-    loadSiswa();
 });
 
 // ============================================
@@ -391,8 +326,6 @@ window.handleLogin = handleLogin;
 window.checkAuth = checkAuth;
 window.logout = logout;
 window.getTodayString = getTodayString;
-window.loadSiswa = loadSiswa;
-window.loadSiswaOptions = loadSiswa; // Alias untuk kompatibilitas
 window.supabaseClient = supabaseClient;
 window.debugMode = debugMode;
 window.updatePasswordSiswa = updatePasswordSiswa;

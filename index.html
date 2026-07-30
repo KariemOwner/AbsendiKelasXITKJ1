@@ -15,6 +15,14 @@
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.95);
         }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake-animation {
+            animation: shake 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
@@ -31,57 +39,81 @@
 
         <!-- Form Login -->
         <form id="loginForm" class="space-y-6">
-            <!-- Dropdown Nama -->
+            <!-- Input Username Modern dengan Icon -->
             <div>
-                <label for="namaPanggilan" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-user mr-2"></i>Nama Panggilan
+                <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-user-circle mr-2 text-blue-500"></i>Nama Panggilan
                 </label>
-                <select 
-                    id="namaPanggilan" 
-                    name="namaPanggilan"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                >
-                    <option value="">-- Pilih Nama --</option>
-                </select>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username"
+                        placeholder="Masukkan nama panggilan kamu..."
+                        autocomplete="off"
+                        required
+                        class="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 bg-white/80 backdrop-blur-sm"
+                    >
+                </div>
             </div>
 
-            <!-- Input Password -->
+            <!-- Input Password dengan Toggle Visibility -->
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-lock mr-2"></i>Password
+                <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-lock mr-2 text-blue-500"></i>Password
                 </label>
-                <div class="relative">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    </div>
                     <input 
                         type="password" 
                         id="password" 
                         name="password"
                         placeholder="Masukkan password"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none pr-12"
+                        class="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 bg-white/80 backdrop-blur-sm"
                     >
                     <button 
                         type="button" 
                         id="togglePassword"
-                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors focus:outline-none"
                     >
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Tombol Masuk -->
+            <!-- Tombol Masuk dengan Gradient Modern -->
             <button 
                 type="submit"
-                class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-[1.02] transition-all shadow-lg"
+                class="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold py-4 rounded-xl hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transform hover:scale-[1.02] hover:shadow-xl transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 group"
             >
-                <i class="fas fa-sign-in-alt mr-2"></i>Masuk
+                <i class="fas fa-sign-in-alt group-hover:translate-x-1 transition-transform"></i>
+                <span>Masuk ke Dashboard</span>
             </button>
         </form>
 
+        <!-- Error Message Container (Modern Toast-style) -->
+        <div id="errorMessage" class="hidden mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded-lg shadow-md">
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <p id="errorText" class="text-sm text-red-800 font-semibold"></p>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
-        <div class="mt-6 text-center text-sm text-gray-500">
-            <p>Default password: <strong>12345</strong></p>
+        <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+            <p class="text-xs text-gray-500">
+                <i class="fas fa-lock mr-1"></i>Default password: <strong class="text-gray-700">12345</strong>
+            </p>
         </div>
     </div>
 
@@ -91,20 +123,117 @@
     <script>
         // Inisialisasi halaman login
         document.addEventListener('DOMContentLoaded', () => {
-            // Toggle show/hide password
+            // Toggle show/hide password dengan animasi smooth
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             
             togglePassword.addEventListener('click', () => {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
-                togglePassword.querySelector('i').classList.toggle('fa-eye');
-                togglePassword.querySelector('i').classList.toggle('fa-eye-slash');
+                const icon = togglePassword.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+                // Tambahkan efek pulse saat toggle
+                togglePassword.classList.add('scale-110');
+                setTimeout(() => togglePassword.classList.remove('scale-110'), 150);
             });
 
-            // Handle form submit
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            // Handle form submit dengan custom error handling yang modern
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const usernameInput = document.getElementById('username');
+                const passwordInput = document.getElementById('password');
+                const errorMessage = document.getElementById('errorMessage');
+                const errorText = document.getElementById('errorText');
+                const loginCard = document.querySelector('.login-card');
+                
+                // Hide error message initially
+                errorMessage.classList.add('hidden');
+                
+                // Trim dan validasi input
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
+                
+                // Efek loading pada tombol
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalBtnContent = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...';
+                
+                try {
+                    // Validasi input kosong
+                    if (!username || !password) {
+                        throw new Error('Harap isi semua field!');
+                    }
+                    
+                    // Cari siswa berdasarkan nama dari Supabase (case-insensitive menggunakan ilike)
+                    const siswa = await getSiswaByNama(username);
+                    
+                    if (!siswa) {
+                        throw new Error('Nama tidak ditemukan! Periksa kembali nama panggilan kamu.');
+                    }
+                    
+                    // Cek password
+                    if (siswa.password !== password) {
+                        throw new Error('Password salah! Silakan coba lagi.');
+                    }
+                    
+                    // Login berhasil - simpan sesi dengan timestamp
+                    sessionStorage.setItem('currentUser', JSON.stringify(siswa));
+                    sessionStorage.setItem('loginTime', new Date().toISOString());
+                    
+                    // Feedback visual sukses sebelum redirect
+                    submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Berhasil! Mengalihkan...';
+                    submitBtn.classList.remove('from-blue-600', 'via-purple-600', 'to-pink-600');
+                    submitBtn.classList.add('from-green-500', 'to-emerald-600');
+                    
+                    // Redirect berdasarkan role dengan delay singkat untuk feedback
+                    setTimeout(() => {
+                        if (siswa.role === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'siswa.html';
+                        }
+                    }, 800);
+                    
+                } catch (error) {
+                    // Reset tombol
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                    submitBtn.classList.add('from-blue-600', 'via-purple-600', 'to-pink-600');
+                    submitBtn.classList.remove('from-green-500', 'to-emerald-600');
+                    
+                    // Tampilkan error dengan animasi shake
+                    showError(error.message, errorMessage, errorText, loginCard);
+                }
+            });
         });
+        
+        /**
+         * Fungsi untuk menampilkan error message dengan animasi shake
+         * @param {string} message - Pesan error
+         * @param {HTMLElement} errorContainer - Container element error
+         * @param {HTMLElement} errorTextElement - Text element error
+         * @param {HTMLElement} cardElement - Card element untuk efek shake
+         */
+        function showError(message, errorContainer, errorTextElement, cardElement) {
+            errorTextElement.textContent = message;
+            errorContainer.classList.remove('hidden');
+            
+            // Tambahkan animasi shake pada card
+            if (cardElement) {
+                cardElement.classList.add('shake-animation');
+                setTimeout(() => {
+                    cardElement.classList.remove('shake-animation');
+                }, 500);
+            }
+            
+            // Auto-hide setelah 5 detik
+            setTimeout(() => {
+                errorContainer.classList.add('hidden');
+            }, 5000);
+        }
     </script>
 </body>
 </html>

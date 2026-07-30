@@ -38,6 +38,26 @@
         </div>
     </nav>
 
+    <!-- Banner Sambutan dengan Gradien Fresh -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div id="bannerSambutan" class="bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl shadow-xl p-6 text-white transform hover:scale-[1.01] transition-all duration-300">
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                        <i id="bannerIcon" class="fas fa-shield-alt text-2xl animate-pulse"></i>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl md:text-2xl font-bold mb-1" id="sambutanText">Selamat Datang, Admin!</h2>
+                    <p class="text-white/90 text-sm md:text-base" id="sambutanSubtext">Kelola absensi kelas dengan bijak.</p>
+                </div>
+                <div class="hidden md:block">
+                    <i class="fas fa-crown text-3xl text-yellow-300 animate-spin-slow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
         <!-- Summary Cards -->
@@ -140,6 +160,9 @@
             currentUser = checkAuth('admin');
             if (!currentUser) return;
 
+            // Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
+            tampilkanBannerSambutan(currentUser.namaPanggilan);
+
             // Set tanggal hari ini
             today = getTodayString();
             statusKey = `absen_${today}`;
@@ -152,6 +175,47 @@
             renderTabel();
             updateSummary();
         });
+
+        /**
+         * Tampilkan banner sambutan dengan pesan dinamis berdasarkan waktu
+         * @param {string} nama - Nama panggilan admin
+         */
+        function tampilkanBannerSambutan(nama) {
+            const now = new Date();
+            const hour = now.getHours();
+            let salam, icon, subtext;
+
+            // Tentukan salam berdasarkan waktu
+            if (hour >= 4 && hour < 11) {
+                // Pagi (04:00 - 10:59)
+                salam = `Selamat Pagi, ${nama}! ✨`;
+                icon = 'fa-sun';
+                subtext = 'Semangat mengelola absensi XI TKJ 1 hari ini.';
+            } else if (hour >= 11 && hour < 15) {
+                // Siang (11:00 - 14:59)
+                salam = `Selamat Siang, ${nama}! 🌤️`;
+                icon = 'fa-cloud-sun';
+                subtext = 'Tetap teliti dalam mencatat kehadiran siswa.';
+            } else if (hour >= 15 && hour < 18) {
+                // Sore (15:00 - 17:59)
+                salam = `Selamat Sore, ${nama}! 🌅`;
+                icon = 'fa-cloud-moon';
+                subtext = 'Terima kasih telah mengelola kelas dengan baik.';
+            } else {
+                // Malam (18:00 - 03:59)
+                salam = `Selamat Malam, ${nama}! 🌙`;
+                icon = 'fa-moon';
+                subtext = 'Istirahat yang cukup untuk besok yang produktif!';
+            }
+
+            // Update UI banner
+            document.getElementById('sambutanText').textContent = salam;
+            document.getElementById('sambutanSubtext').textContent = subtext;
+            
+            // Update icon dengan animasi
+            const bannerIcon = document.getElementById('bannerIcon');
+            bannerIcon.className = `fas ${icon} text-2xl animate-pulse`;
+        }
 
         async function renderTabel() {
             const students = await getSiswa();
