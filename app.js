@@ -223,18 +223,14 @@ async function updateStatusAbsen(id, newStatus) {
  */
 async function upsertRiwayatAbsen(namaPanggilan, tanggal, statusAbsen, alasan = null) {
     try {
-        // Dapatkan waktu saat ini dalam format HH:mm:ss
-        const now = new Date();
-        const waktuAbsen = now.toTimeString().split(' ')[0];
-        
+        // Tidak perlu mengirim waktu_absen karena database menggunakan DEFAULT CURRENT_TIMESTAMP
         const { data, error } = await supabaseClient
             .from('riwayat_absen')
             .upsert({ 
                 nama_panggilan: namaPanggilan, 
                 tanggal: tanggal, 
                 status_absen: statusAbsen,
-                alasan: alasan,
-                waktu_absen: waktuAbsen
+                alasan: alasan
             }, { 
                 onConflict: 'nama_panggilan, tanggal' 
             });
