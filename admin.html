@@ -264,11 +264,21 @@
             // Gabungkan data siswa dengan riwayat absen
             const mergedData = students.map(siswa => {
                 const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
+                
+                // Format waktu dari HH:mm:ss menjadi HH:mm WIB
+                let waktuDisplay = '-';
+                if (riwayat && riwayat.waktu_absen) {
+                    const waktuParts = riwayat.waktu_absen.split(':');
+                    if (waktuParts.length >= 2) {
+                        waktuDisplay = `${waktuParts[0]}:${waktuParts[1]} WIB`;
+                    }
+                }
+                
                 return {
                     ...siswa,
                     statusAbsen: riwayat ? riwayat.status_absen : 'belum',
                     alasan: riwayat ? (riwayat.alasan || '-') : '-',
-                    waktu: '-'
+                    waktu: waktuDisplay
                 };
             });
             
@@ -415,11 +425,21 @@
             // Gabungkan data seperti di renderTabel
             const mergedData = students.map(siswa => {
                 const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
+                
+                // Format waktu dari HH:mm:ss menjadi HH:mm WIB
+                let waktuDisplay = '-';
+                if (riwayat && riwayat.waktu_absen) {
+                    const waktuParts = riwayat.waktu_absen.split(':');
+                    if (waktuParts.length >= 2) {
+                        waktuDisplay = `${waktuParts[0]}:${waktuParts[1]}`;
+                    }
+                }
+                
                 return {
                     no: '',
                     nama: siswa.namaPanggilan,
                     status: riwayat ? riwayat.status_absen : 'belum',
-                    waktu: '-',
+                    waktu: waktuDisplay,
                     alasan: riwayat ? (riwayat.alasan || '-') : '-'
                 };
             });

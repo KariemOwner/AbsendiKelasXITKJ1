@@ -218,16 +218,23 @@ async function updateStatusAbsen(id, newStatus) {
  * @param {string} namaPanggilan - Nama panggilan siswa
  * @param {string} tanggal - Tanggal dalam format YYYY-MM-DD
  * @param {string} statusAbsen - Status absen (hadir, izin, sakit, alpa)
+ * @param {string} alasan - Alasan absen (opsional, untuk sakit/izin)
  * @returns {Promise<boolean>} Success status
  */
-async function upsertRiwayatAbsen(namaPanggilan, tanggal, statusAbsen) {
+async function upsertRiwayatAbsen(namaPanggilan, tanggal, statusAbsen, alasan = null) {
     try {
+        // Dapatkan waktu saat ini dalam format HH:mm:ss
+        const now = new Date();
+        const waktuAbsen = now.toTimeString().split(' ')[0];
+        
         const { data, error } = await supabaseClient
             .from('riwayat_absen')
             .upsert({ 
                 nama_panggilan: namaPanggilan, 
                 tanggal: tanggal, 
-                status_absen: statusAbsen 
+                status_absen: statusAbsen,
+                alasan: alasan,
+                waktu_absen: waktuAbsen
             }, { 
                 onConflict: 'nama_panggilan, tanggal' 
             });
