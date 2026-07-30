@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siswa - Absensi XI TKJ 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -16,7 +21,7 @@
             --nav-bg: #ffffff;
         }
 
-        [data-theme="dark"] {
+        .dark {
             --bg-primary: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             --bg-card: rgba(30, 30, 46, 0.95);
             --text-primary: #f3f4f6;
@@ -119,7 +124,7 @@
             <div class="text-center">
                 <p class="text-gray-500 text-sm mb-2">Hari ini adalah</p>
                 <h2 class="text-3xl font-bold text-gray-800 dark:text-white" id="tanggalHariIni">-</h2>
-                <p class="text-gray-600 mt-2" id="waktuHariIni">-</p>
+                <p class="text-gray-600 dark:text-gray-400 mt-2" id="waktuHariIni">-</p>
             </div>
         </div>
 
@@ -155,13 +160,13 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Ganti Password</h3>
-                <button onclick="closeModal('passwordModal')" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                <button onclick="closeModal('passwordModal')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             <form id="gantiPasswordForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password Lama</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password Lama</label>
                     <input 
                         type="password" 
                         id="passwordLama"
@@ -170,7 +175,7 @@
                     >
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password Baru</label>
                     <input 
                         type="password" 
                         id="passwordBaru"
@@ -202,13 +207,13 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Lapor Sakit / Izin</h3>
-                <button onclick="closeModal('izinModal')" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                <button onclick="closeModal('izinModal')" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             <form id="izinForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Keterangan</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jenis Keterangan</label>
                     <select 
                         id="jenisIzin"
                         required
@@ -364,11 +369,11 @@
 
                 statusContainer.innerHTML = `
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-20 h-20 bg-${statusColor}-100 rounded-full mb-4">
+                        <div class="inline-flex items-center justify-center w-20 h-20 bg-${statusColor}-100 dark:bg-${statusColor}-900/30 rounded-full mb-4">
                             <i class="fas fa-${statusIcon} text-${statusColor}-500 text-3xl"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Status: ${statusText}</h3>
-                        <p class="text-gray-500 mt-2">Terakhir diupdate: ${new Date().toLocaleString('id-ID')}</p>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Status: ${statusText}</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">Terakhir diupdate: ${new Date().toLocaleString('id-ID')}</p>
                     </div>
                 `;
 
@@ -378,10 +383,10 @@
                 // Belum absen
                 statusContainer.innerHTML = `
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                            <i class="fas fa-question-circle text-gray-400 text-3xl"></i>
+                        <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                            <i class="fas fa-question-circle text-gray-400 dark:text-gray-500 text-3xl"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Belum Absen</h3>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Belum Absen</h3>
                         <p class="text-gray-600 dark:text-gray-400">Silakan lakukan absensi kehadiran atau lapor sakit/izin</p>
                     </div>
                 `;
@@ -456,19 +461,17 @@
         function toggleTheme() {
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
-            html.setAttribute('data-theme', newTheme);
-            
-            if (newTheme === 'dark') {
-                themeIcon.classList.remove('fa-moon', 'text-gray-800');
-                themeIcon.classList.add('fa-sun', 'text-yellow-400');
-                localStorage.setItem('theme', 'dark');
-            } else {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
                 themeIcon.classList.remove('fa-sun', 'text-yellow-400');
                 themeIcon.classList.add('fa-moon', 'text-gray-800');
                 localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
             }
         }
 
@@ -478,9 +481,8 @@
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
             
-            html.setAttribute('data-theme', savedTheme);
-            
             if (savedTheme === 'dark') {
+                html.classList.add('dark');
                 themeIcon.classList.remove('fa-moon', 'text-gray-800');
                 themeIcon.classList.add('fa-sun', 'text-yellow-400');
             }
