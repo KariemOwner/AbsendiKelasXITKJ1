@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Absensi XI TKJ 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -16,7 +21,7 @@
             --nav-bg: #ffffff;
         }
 
-        [data-theme="dark"] {
+        .dark {
             --bg-primary: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             --bg-card: rgba(30, 30, 46, 0.95);
             --text-primary: #f3f4f6;
@@ -113,7 +118,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
             <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
-                    <label for="tanggalFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    <label for="tanggalFilter" class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         <i class="fas fa-calendar-alt mr-2"></i>Pilih Tanggal:
                     </label>
                     <input 
@@ -188,11 +193,11 @@
             <!-- Belum Absen -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
                         <i class="fas fa-question-circle text-gray-500 dark:text-gray-400"></i>
                     </div>
                 </div>
-                <p class="text-gray-500 text-sm">Belum</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Belum</p>
                 <p class="text-3xl font-bold text-gray-600 dark:text-gray-400" id="countBelum">0</p>
             </div>
         </div>
@@ -235,7 +240,7 @@
                 </h3>
                 <button 
                     onclick="closeChangePasswordModal()"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                    class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -243,7 +248,7 @@
             
             <div class="px-6 py-6 space-y-4">
                 <div>
-                    <label for="oldPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="oldPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Password Lama
                     </label>
                     <input 
@@ -255,7 +260,7 @@
                 </div>
                 
                 <div>
-                    <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Password Baru
                     </label>
                     <input 
@@ -447,7 +452,7 @@
                                 <!-- Reset Password Button -->
                                 <button 
                                     onclick="resetPassword('${siswa.id}', '${siswa.namaPanggilan}')"
-                                    class="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                                    class="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                                     title="Reset Password"
                                 >
                                     <i class="fas fa-key"></i>
@@ -516,11 +521,11 @@
         function getStatusConfig(status) {
             // Status sekarang langsung: 'hadir', 'izin', 'sakit', 'alpa', 'belum'
             const configs = {
-                hadir: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hadir' },
-                izin: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Izin' },
-                sakit: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sakit' },
-                alpa: { bg: 'bg-red-100', text: 'text-red-800', label: 'Alpa' },
-                belum: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Belum' }
+                hadir: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', label: 'Hadir' },
+                izin: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-300', label: 'Izin' },
+                sakit: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300', label: 'Sakit' },
+                alpa: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300', label: 'Alpa' },
+                belum: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300', label: 'Belum' }
             };
             return configs[status] || configs.belum;
         }
@@ -599,19 +604,17 @@
         function toggleTheme() {
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
-            html.setAttribute('data-theme', newTheme);
-            
-            if (newTheme === 'dark') {
-                themeIcon.classList.remove('fa-moon', 'text-gray-800');
-                themeIcon.classList.add('fa-sun', 'text-yellow-400');
-                localStorage.setItem('theme', 'dark');
-            } else {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
                 themeIcon.classList.remove('fa-sun', 'text-yellow-400');
                 themeIcon.classList.add('fa-moon', 'text-gray-800');
                 localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
             }
         }
 
@@ -621,9 +624,8 @@
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
             
-            html.setAttribute('data-theme', savedTheme);
-            
             if (savedTheme === 'dark') {
+                html.classList.add('dark');
                 themeIcon.classList.remove('fa-moon', 'text-gray-800');
                 themeIcon.classList.add('fa-sun', 'text-yellow-400');
             }

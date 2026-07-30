@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Absensi XI TKJ 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -17,7 +22,7 @@
             --card-shadow: rgba(0, 0, 0, 0.1);
         }
 
-        [data-theme="dark"] {
+        .dark {
             --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             --bg-secondary: rgba(30, 30, 46, 0.95);
             --text-primary: #f3f4f6;
@@ -289,20 +294,17 @@
         function toggleTheme() {
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
-            html.setAttribute('data-theme', newTheme);
-            
-            // Update icon
-            if (newTheme === 'dark') {
-                themeIcon.classList.remove('fa-moon', 'text-gray-800');
-                themeIcon.classList.add('fa-sun', 'text-yellow-400');
-                localStorage.setItem('theme', 'dark');
-            } else {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
                 themeIcon.classList.remove('fa-sun', 'text-yellow-400');
                 themeIcon.classList.add('fa-moon', 'text-gray-800');
                 localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
             }
         }
 
@@ -312,9 +314,8 @@
             const html = document.documentElement;
             const themeIcon = document.getElementById('themeIcon');
             
-            html.setAttribute('data-theme', savedTheme);
-            
             if (savedTheme === 'dark') {
+                html.classList.add('dark');
                 themeIcon.classList.remove('fa-moon', 'text-gray-800');
                 themeIcon.classList.add('fa-sun', 'text-yellow-400');
             }
