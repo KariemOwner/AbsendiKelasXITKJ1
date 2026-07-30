@@ -75,10 +75,17 @@
                 </div>
                 <button 
                     onclick="exportToCSV()"
-                    class="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all shadow-lg flex items-center space-x-2"
+                    class="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-700 transform hover:scale-105 transition-all shadow-lg flex items-center space-x-2"
                 >
                     <i class="fas fa-file-csv"></i>
-                    <span>Export Data (CSV)</span>
+                    <span>Export Harian (CSV)</span>
+                </button>
+                <button 
+                    onclick="exportBulananToCSV()"
+                    class="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all shadow-lg flex items-center space-x-2"
+                >
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Ekspor Bulan Ini</span>
                 </button>
             </div>
         </div>
@@ -411,13 +418,19 @@
             return configs[status] || configs.belum;
         }
 
+    </script>
+</body>
+</html>
         function exportToCSV() {
             // Ambil data dari tabel yang sedang tampil
             const students = window.siswaData || [];
             const riwayatData = window.riwayatData || [];
             
-            // CSV Header
-            let csvContent = "No,Nama Siswa,Status,Waktu,Alasan\n";
+            // Tambahkan BOM untuk Excel dan gunakan delimiter titik koma (;)
+            const bom = "\uFEFF";
+            
+            // CSV Header (gunakan titik koma sebagai delimiter)
+            let csvContent = "No;Nama Siswa;Status;Waktu;Alasan\n";
             
             // Gabungkan data seperti di renderTabel
             const mergedData = students.map(siswa => {
@@ -438,11 +451,14 @@
                 };
             });
             
-            // Add data rows
+            // Add data rows (gunakan titik koma sebagai delimiter)
             mergedData.forEach((row, index) => {
                 row.no = index + 1;
-                csvContent += `${row.no},"${row.nama}",${row.status},${row.waktu},"${row.alasan}"\n`;
+                csvContent += `${row.no};"${row.nama}";${row.status};${row.waktu};"${row.alasan}"\n`;
             });
+            
+            // Tambahkan BOM di awal agar Excel membaca UTF-8 dengan benar
+            csvContent = bom + csvContent;
             
             // Create download link
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -460,6 +476,113 @@
             document.body.removeChild(link);
             
             alert('✅ Data berhasil diexport sebagai CSV!');
+        }
+
+        async function exportBulananToCSV() {
+            // Ambil bulan dan tahun dari input tanggal yang dipilih
+            const tanggalInput = document.getElementById('tanggalFilter').value;
+            if (!tanggalInput) {
+                alert('⚠️ Pilih tanggal terlebih dahulu!');
+                return;
+            }
+            
+            const dateObj = new Date(tanggalInput + 'T00:00:00');
+            const year = dateObj.getFullYear();
+            const month = dateObj.getMonth(); // 0-11
+            const monthName = dateObj.toLocaleDateString('id-ID', { month: 'long' });
+            
+            // Tentukan tanggal awal dan akhir bulan
+            const tglAwalBulan = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+            const tglAkhirBulan = new Date(year, month + 1, 0);
+            const lastDay = tglAkhirBulan.getDate();
+            const tglAkhirBulanStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            
+            // Fetch semua siswa
+            const students = await getSiswa();
+            
+            // Fetch semua data riwayat absen pada bulan tersebut
+            const { data: riwayatData, error } = await supabaseClient
+                .from('riwayat_absen')
+                .select('*')
+                .gte('tanggal', tglAwalBulan)
+                .lte('tanggal', tglAkhirBulanStr);
+            
+            if (error) {
+                console.error('❌ Error mengambil data bulanan:', error.message);
+                alert('⚠️ Gagal mengambil data absensi bulan ini.');
+                return;
+            }
+            
+            // Tambahkan BOM untuk Excel dan gunakan delimiter titik koma (;)
+            const bom = "\uFEFF";
+            
+            // Buat header CSV: No; Nama Siswa; 1; 2; 3; ...; Total Hadir; Total Izin; Total Sakit; Total Alpa
+            let header = "No;Nama Siswa";
+            for (let day = 1; day <= lastDay; day++) {
+                header += `;${day}`;
+            }
+            header += ";Total Hadir;Total Izin;Total Sakit;Total Alpa";
+            
+            let csvContent = header + "\n";
+            
+            // Looping data siswa
+            students.forEach((siswa, index) => {
+                let row = `${index + 1};"${siswa.namaPanggilan}"`;
+                
+                let totalHadir = 0;
+                let totalIzin = 0;
+                let totalSakit = 0;
+                let totalAlpa = 0;
+                
+                // Loop setiap hari dalam bulan
+                for (let day = 1; day <= lastDay; day++) {
+                    const currentTgl = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    
+                    // Cari data absen untuk siswa ini pada tanggal ini
+                    const riwayat = riwayatData.find(r => 
+                        r.nama_panggilan === siswa.namaPanggilan && r.tanggal === currentTgl
+                    );
+                    
+                    if (riwayat) {
+                        const status = riwayat.status_absen;
+                        row += `;${status.toUpperCase().charAt(0)}`;
+                        
+                        // Hitung total
+                        if (status === 'hadir') totalHadir++;
+                        else if (status === 'izin') totalIzin++;
+                        else if (status === 'sakit') totalSakit++;
+                        else if (status === 'alpa') totalAlpa++;
+                    } else {
+                        // Jika belum ada data, isi dengan strip
+                        row += ';-';
+                    }
+                }
+                
+                // Tambahkan total di kolom paling kanan
+                row += `;${totalHadir};${totalIzin};${totalSakit};${totalAlpa}`;
+                
+                csvContent += row + "\n";
+            });
+            
+            // Tambahkan BOM di awal
+            csvContent = bom + csvContent;
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            // Format filename: Rekap_Absensi_TKJ1_Bulan_[Bulan]-[Tahun].csv
+            const monthNum = String(month + 1).padStart(2, '0');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Rekap_Absensi_TKJ1_Bulan_${monthNum}-${year}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`✅ Rekap absensi bulan ${monthName} ${year} berhasil diexport!`);
         }
     </script>
 </body>
