@@ -586,4 +586,142 @@ async function exportBulananToCSV() {
     alert(`✅ Rekap absensi bulan ${monthName} ${year} berhasil diexport!`);
 }
 
+// ============================================
+// 8. FUNGSI CHATBOT AI ASSISTANT
+// ============================================
+
+/**
+ * Toggle chat window visibility
+ */
+function toggleChatWindow() {
+    const chatWindow = document.getElementById('chatWindow');
+    if (!chatWindow) return;
+    
+    chatWindow.classList.toggle('hidden');
+    
+    // Focus ke input saat dibuka
+    if (!chatWindow.classList.contains('hidden')) {
+        setTimeout(() => {
+            const input = document.getElementById('chatInput');
+            if (input) input.focus();
+        }, 100);
+    }
+}
+
+/**
+ * Escape HTML untuk mencegah XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Kirim pesan ke API chatbot backend
+ */
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    const chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) return;
+    
+    // Tampilkan pesan user
+    const userBubble = document.createElement('div');
+    userBubble.className = 'flex justify-end mb-3';
+    userBubble.innerHTML = `
+        <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-tr-none max-w-xs break-words shadow-md">
+            ${escapeHtml(message)}
+        </div>
+    `;
+    chatMessages.appendChild(userBubble);
+    
+    // Clear input
+    input.value = '';
+    
+    // Auto-scroll ke bawah
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Tampilkan indikator "mengetik..."
+    const typingIndicator = document.createElement('div');
+    typingIndicator.id = 'typingIndicator';
+    typingIndicator.className = 'flex justify-start mb-3';
+    typingIndicator.innerHTML = `
+        <div class="bg-gray-200 dark:bg-gray-700 px-4 py-3 rounded-2xl rounded-tl-none max-w-xs shadow-md">
+            <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
+                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
+                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(typingIndicator);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    try {
+        // Fetch ke backend API
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        });
+        
+        // Hapus indikator mengetik
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const aiReply = data.reply || 'Maaf, terjadi kesalahan.';
+        
+        // Tampilkan balasan AI
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'flex justify-start mb-3';
+        aiBubble.innerHTML = `
+            <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
+                ${escapeHtml(aiReply)}
+            </div>
+        `;
+        chatMessages.appendChild(aiBubble);
+        
+    } catch (error) {
+        console.error('Error sending message:', error);
+        
+        // Hapus indikator mengetik jika ada
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
+        
+        // Tampilkan pesan error
+        const errorBubble = document.createElement('div');
+        errorBubble.className = 'flex justify-start mb-3';
+        errorBubble.innerHTML = `
+            <div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
+                ⚠️ Maaf, gagal menghubungi AI. Silakan coba lagi.
+            </div>
+        `;
+        chatMessages.appendChild(errorBubble);
+    }
+    
+    // Auto-scroll ke bawah
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Handle Enter key pada chat input
+ */
+function handleChatKeypress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
 console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
