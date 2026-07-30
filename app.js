@@ -662,6 +662,9 @@ async function sendMessage() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
     try {
+        // DEBUG: Mulai mengirim pesan
+        console.log("Mulai mengirim pesan...", message);
+        
         // Fetch ke backend API
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -670,6 +673,9 @@ async function sendMessage() {
             },
             body: JSON.stringify({ message: message })
         });
+        
+        // DEBUG: Response diterima
+        console.log("Response diterima:", response.status);
         
         // Hapus indikator mengetik
         const indicator = document.getElementById('typingIndicator');
@@ -704,6 +710,9 @@ async function sendMessage() {
         chatMessages.appendChild(aiBubble);
         
     } catch (error) {
+        // DEBUG: Tangkap error secara eksplisit
+        console.error("Gagal melakukan fetch:", error);
+        
         console.error('Error sending message:', error);
         
         // Hapus indikator mengetik jika ada
