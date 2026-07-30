@@ -311,13 +311,12 @@
                 <div class="flex items-center space-x-2">
                     <input 
                         type="text" 
-                        id="aiChatInput"
+                        id="chatInput"
                         placeholder="Ketik pesan..."
                         class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500"
-                        onkeypress="handleChatKeypress(event)"
                     >
                     <button 
-                        onclick="sendMessage()"
+                        id="sendChatBtn"
                         class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     >
                         <i class="fas fa-paper-plane text-white text-sm"></i>

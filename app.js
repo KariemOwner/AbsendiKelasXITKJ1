@@ -757,4 +757,22 @@ function handleChatKeypress(event) {
     }
 }
 
+// Event Listener untuk tombol kirim dan input chat
+document.addEventListener('DOMContentLoaded', () => {
+    const chatInput = document.getElementById('chatInput');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+
+    if (sendChatBtn) {
+        sendChatBtn.addEventListener('click', sendMessage);
+    }
+
+    if (chatInput) {
+        chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+});
+
 console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
