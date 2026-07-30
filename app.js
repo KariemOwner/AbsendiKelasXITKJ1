@@ -59,6 +59,7 @@ async function getSiswa() {
         const { data, error } = await supabaseClient
             .from('siswa')
             .select('*')
+            .eq('role', 'siswa')
             .order('nama_panggilan', { ascending: true });
         
         if (error) throw error;
