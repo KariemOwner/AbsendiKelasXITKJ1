@@ -51,18 +51,10 @@
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- Theme Toggle Button -->
-    <button 
-        id="themeToggle"
-        class="fixed top-20 right-4 z-50 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
-        onclick="toggleTheme()"
-    >
-        <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-400 text-xl"></i>
-    </button>
     <!-- Navbar -->
     <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-40 transition-colors">
         <div class="max-w-7xl mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-wrap justify-between items-center gap-3">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
                         <i class="fas fa-user-shield text-white"></i>
@@ -72,7 +64,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">XI TKJ 1</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <button 
                         onclick="openChangePasswordModal()"
                         class="px-4 py-2 border-2 border-purple-500 text-purple-500 rounded-lg hover:bg-purple-500 hover:text-white transition-all flex items-center space-x-2"
@@ -86,6 +78,15 @@
                     >
                         <i class="fas fa-sign-out-alt"></i>
                         <span class="hidden sm:inline">Logout</span>
+                    </button>
+                    <!-- Theme Toggle Button - Inside Navbar -->
+                    <button 
+                        id="themeToggle"
+                        class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                        onclick="toggleTheme()"
+                        title="Toggle Theme"
+                    >
+                        <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-400"></i>
                     </button>
                 </div>
             </div>
@@ -285,6 +286,79 @@
                 >
                     Simpan
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Class Assistant - Floating Chat Widget -->
+    <div id="aiChatWidget">
+        <!-- Floating Action Button (FAB) -->
+        <button 
+            id="aiChatFab"
+            onclick="toggleChatWindow()"
+            class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 group"
+            title="AI Class Assistant"
+        >
+            <i class="fas fa-robot text-white text-2xl"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div 
+            id="aiChatWindow"
+            class="fixed bottom-24 right-6 z-50 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl hidden flex-col overflow-hidden border border-gray-200 dark:border-gray-700"
+        >
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-sm">Qwen TKJ 1 Assistant</h3>
+                        <p class="text-white/80 text-xs">Online</p>
+                    </div>
+                </div>
+                <button 
+                    onclick="toggleChatWindow()"
+                    class="text-white/80 hover:text-white transition-colors"
+                >
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div 
+                id="aiChatMessages"
+                class="flex-1 p-4 h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900 space-y-3"
+            >
+                <!-- Default Bot Message -->
+                <div class="flex items-start space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-white text-xs"></i>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-none px-3 py-2 shadow-sm max-w-[80%]">
+                        <p class="text-sm text-gray-800 dark:text-gray-200">Halo! 👋 Saya Qwen, asisten AI kelas XI TKJ 1. Ada yang bisa saya bantu?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-2">
+                    <input 
+                        type="text" 
+                        id="aiChatInput"
+                        placeholder="Ketik pesan..."
+                        class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-purple-500"
+                        onkeypress="handleChatKeypress(event)"
+                    >
+                    <button 
+                        onclick="sendMessage()"
+                        class="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    >
+                        <i class="fas fa-paper-plane text-white text-sm"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -630,6 +704,63 @@
                 themeIcon.classList.add('fa-sun', 'text-yellow-400');
             }
         });
+
+        // AI Chat Widget Functions
+        let chatWindowOpen = false;
+
+        function toggleChatWindow() {
+            const chatWindow = document.getElementById('aiChatWindow');
+            const chatFab = document.getElementById('aiChatFab');
+            
+            if (chatWindowOpen) {
+                chatWindow.classList.add('hidden');
+                chatFab.classList.remove('scale-0');
+            } else {
+                chatWindow.classList.remove('hidden');
+                chatWindow.classList.add('flex');
+            }
+            
+            chatWindowOpen = !chatWindowOpen;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('aiChatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const messagesContainer = document.getElementById('aiChatMessages');
+            
+            // Add user message bubble
+            const userMessageHtml = `
+                <div class="flex items-start justify-end space-x-2">
+                    <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl rounded-tr-none px-3 py-2 shadow-sm max-w-[80%]">
+                        <p class="text-sm text-white">${escapeHtml(message)}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user text-gray-600 dark:text-gray-300 text-xs"></i>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.insertAdjacentHTML('beforeend', userMessageHtml);
+            
+            // Clear input and scroll to bottom
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
     </script>
 </body>
