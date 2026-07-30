@@ -265,13 +265,10 @@
             const mergedData = students.map(siswa => {
                 const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
                 
-                // Format waktu dari HH:mm:ss menjadi HH:mm WIB
+                // Format waktu menggunakan fungsi formatWaktu untuk konversi UTC ke WIB
                 let waktuDisplay = '-';
                 if (riwayat && riwayat.waktu_absen) {
-                    const waktuParts = riwayat.waktu_absen.split(':');
-                    if (waktuParts.length >= 2) {
-                        waktuDisplay = `${waktuParts[0]}:${waktuParts[1]} WIB`;
-                    }
+                    waktuDisplay = formatWaktu(riwayat.waktu_absen);
                 }
                 
                 return {
@@ -426,13 +423,10 @@
             const mergedData = students.map(siswa => {
                 const riwayat = riwayatData.find(r => r.nama_panggilan === siswa.namaPanggilan);
                 
-                // Format waktu dari HH:mm:ss menjadi HH:mm WIB
+                // Format waktu menggunakan fungsi formatWaktu untuk konversi UTC ke WIB
                 let waktuDisplay = '-';
                 if (riwayat && riwayat.waktu_absen) {
-                    const waktuParts = riwayat.waktu_absen.split(':');
-                    if (waktuParts.length >= 2) {
-                        waktuDisplay = `${waktuParts[0]}:${waktuParts[1]}`;
-                    }
+                    waktuDisplay = formatWaktu(riwayat.waktu_absen);
                 }
                 
                 return {
