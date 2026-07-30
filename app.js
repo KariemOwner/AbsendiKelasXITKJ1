@@ -336,6 +336,21 @@ function getTodayString() {
 }
 
 /**
+ * Format waktu dari ISO string UTC ke waktu lokal WIB (HH:mm WIB)
+ * @param {string} waktuUTC - Waktu dalam format ISO string dari database
+ * @returns {string} Waktu dalam format HH:mm WIB
+ */
+function formatWaktu(waktuUTC) {
+    if (!waktuUTC) return '-';
+    const date = new Date(waktuUTC);
+    return date.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta'
+    }) + ' WIB';
+}
+
+/**
  * Fungsi loadSiswa dihapus karena tidak lagi menggunakan dropdown
  * Diganti dengan input text yang memungkinkan user mengetik nama langsung
  * Fungsi ini dihapus sepenuhnya dari kode
@@ -388,5 +403,6 @@ window.resetPasswordSiswa = resetPasswordSiswa;
 window.updateStatusAbsen = updateStatusAbsen;
 window.upsertRiwayatAbsen = upsertRiwayatAbsen;
 window.getRiwayatAbsenByTanggal = getRiwayatAbsenByTanggal;
+window.formatWaktu = formatWaktu;
 
 console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
