@@ -60,7 +60,7 @@ async function getSiswa() {
             .from('siswa')
             .select('*')
             .eq('role', 'siswa')
-            .order('nama_panggilan', { ascending: true });
+            .order('nama_lengkap', { ascending: true });
         
         if (error) throw error;
         
