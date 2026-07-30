@@ -7,15 +7,55 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --nav-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            --bg-card: rgba(30, 30, 46, 0.95);
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+            --nav-bg: #1f2937;
+        }
+
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: var(--bg-primary);
             min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .card-dark {
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+
+        .text-dark-primary {
+            color: var(--text-primary);
+        }
+
+        .text-dark-secondary {
+            color: var(--text-secondary);
         }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- Theme Toggle Button -->
+    <button 
+        id="themeToggle"
+        class="fixed top-20 right-4 z-50 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        onclick="toggleTheme()"
+    >
+        <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-400 text-xl"></i>
+    </button>
     <!-- Navbar -->
-    <nav class="bg-white shadow-lg sticky top-0 z-40">
+    <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-40 transition-colors">
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
@@ -23,8 +63,8 @@
                         <i class="fas fa-user-shield text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-800">Panel Admin</h1>
-                        <p class="text-sm text-gray-500">XI TKJ 1</p>
+                        <h1 class="text-xl font-bold text-gray-800 dark:text-white">Panel Admin</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">XI TKJ 1</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -70,7 +110,7 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
         <!-- Filter Tanggal & Export -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
             <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
                     <label for="tanggalFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -79,7 +119,7 @@
                     <input 
                         type="date" 
                         id="tanggalFilter"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 outline-none transition-all"
                     >
                 </div>
                 <button 
@@ -102,7 +142,7 @@
         <!-- Summary Cards -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
             <!-- Hadir -->
-            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -113,7 +153,7 @@
             </div>
 
             <!-- Izin -->
-            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-file-alt text-blue-500"></i>
@@ -124,7 +164,7 @@
             </div>
 
             <!-- Sakit -->
-            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-bed text-yellow-500"></i>
@@ -135,7 +175,7 @@
             </div>
 
             <!-- Alpa -->
-            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-times-circle text-red-500"></i>
@@ -146,29 +186,29 @@
             </div>
 
             <!-- Belum Absen -->
-            <div class="bg-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 transform hover:scale-105 transition-transform">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-question-circle text-gray-500"></i>
+                        <i class="fas fa-question-circle text-gray-500 dark:text-gray-400"></i>
                     </div>
                 </div>
                 <p class="text-gray-500 text-sm">Belum</p>
-                <p class="text-3xl font-bold text-gray-600" id="countBelum">0</p>
+                <p class="text-3xl font-bold text-gray-600 dark:text-gray-400" id="countBelum">0</p>
             </div>
         </div>
 
         <!-- Tabel Rekap -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-gray-800">Rekap Absensi</h2>
-                    <p class="text-sm text-gray-500" id="tanggalTampil">-</p>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Rekap Absensi</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400" id="tanggalTampil">-</p>
                 </div>
             </div>
             
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 dark:bg-gray-900">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Siswa</th>
@@ -178,7 +218,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi Sekretaris</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200" id="tabelSiswa">
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700" id="tabelSiswa">
                         <!-- Data akan diisi oleh JavaScript -->
                     </tbody>
                 </table>
@@ -188,9 +228,9 @@
 
     <!-- Modal Ganti Password -->
     <div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all scale-100">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-800">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transform transition-all scale-100">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">
                     <i class="fas fa-key text-purple-500 mr-2"></i>Ganti Password
                 </h3>
                 <button 
@@ -209,7 +249,7 @@
                     <input 
                         type="password" 
                         id="oldPassword"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 outline-none transition-all"
                         placeholder="Masukkan password lama"
                     >
                 </div>
@@ -221,16 +261,16 @@
                     <input 
                         type="password" 
                         id="newPassword"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 outline-none transition-all"
                         placeholder="Masukkan password baru"
                     >
                 </div>
             </div>
             
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
                 <button 
                     onclick="closeChangePasswordModal()"
-                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                 >
                     Batal
                 </button>
@@ -357,18 +397,18 @@
                 const statusConfig = getStatusConfig(siswa.statusAbsen);
                 
                 return `
-                    <tr class="hover:bg-gray-50 transition-colors">
+                    <tr class="hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="font-medium text-gray-900">${siswa.namaLengkap}</div>
-                            <div class="text-sm text-gray-500">ID: ${siswa.id}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">ID: ${siswa.id}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusConfig.bg} ${statusConfig.text}">
                                 ${statusConfig.label}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${siswa.waktu}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${siswa.waktu}</td>
                         <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${siswa.alasan}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-wrap gap-2">
@@ -554,6 +594,40 @@
             alert('✅ Password berhasil diubah!');
             closeChangePasswordModal();
         }
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            
+            if (newTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.classList.remove('fa-sun', 'text-yellow-400');
+                themeIcon.classList.add('fa-moon', 'text-gray-800');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            html.setAttribute('data-theme', savedTheme);
+            
+            if (savedTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+            }
+        });
 
     </script>
 </body>

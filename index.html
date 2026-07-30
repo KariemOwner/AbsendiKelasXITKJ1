@@ -7,14 +7,56 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        :root {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --card-shadow: rgba(0, 0, 0, 0.1);
         }
+
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --bg-secondary: rgba(30, 30, 46, 0.95);
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+            --input-bg: rgba(55, 65, 81, 0.8);
+            --card-shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            background: var(--bg-primary);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
         .login-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
+            transition: all 0.3s ease;
         }
+
+        .text-primary {
+            color: var(--text-primary);
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .border-custom {
+            border-color: var(--border-color);
+        }
+
+        .input-field {
+            background: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -26,6 +68,14 @@
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
+    <!-- Theme Toggle Button -->
+    <button 
+        id="themeToggle"
+        class="fixed top-4 right-4 z-50 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        onclick="toggleTheme()"
+    >
+        <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-400 text-xl"></i>
+    </button>
     <!-- Card Login -->
     <div class="login-card w-full max-w-md rounded-2xl shadow-2xl p-8 transform transition-all hover:scale-[1.02]">
         <!-- Header -->
@@ -33,20 +83,20 @@
             <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
                 <i class="fas fa-school text-white text-2xl"></i>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800">Absensi Kelas</h1>
-            <p class="text-gray-600">XI TKJ 1</p>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Absensi Kelas</h1>
+            <p class="text-gray-600 dark:text-gray-300">XI TKJ 1</p>
         </div>
 
         <!-- Form Login -->
         <form id="loginForm" class="space-y-6">
             <!-- Input Username Modern dengan Icon -->
             <div>
-                <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="username" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     <i class="fas fa-user-circle mr-2 text-blue-500"></i>Nama Panggilan
                 </label>
                 <div class="relative group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i class="fas fa-user text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                        <i class="fas fa-user text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"></i>
                     </div>
                     <input 
                         type="text" 
@@ -55,19 +105,19 @@
                         placeholder="Masukkan nama panggilan kamu..."
                         autocomplete="off"
                         required
-                        class="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 bg-white/80 backdrop-blur-sm"
+                        class="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     >
                 </div>
             </div>
 
             <!-- Input Password dengan Toggle Visibility -->
             <div>
-                <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     <i class="fas fa-lock mr-2 text-blue-500"></i>Password
                 </label>
                 <div class="relative group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i class="fas fa-lock text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                        <i class="fas fa-lock text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"></i>
                     </div>
                     <input 
                         type="password" 
@@ -75,12 +125,12 @@
                         name="password"
                         placeholder="Masukkan password"
                         required
-                        class="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 bg-white/80 backdrop-blur-sm"
+                        class="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     >
                     <button 
                         type="button" 
                         id="togglePassword"
-                        class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors focus:outline-none"
+                        class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-blue-500 transition-colors focus:outline-none"
                     >
                         <i class="fas fa-eye"></i>
                     </button>
@@ -98,21 +148,21 @@
         </form>
 
         <!-- Error Message Container (Modern Toast-style) -->
-        <div id="errorMessage" class="hidden mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded-lg shadow-md">
+        <div id="errorMessage" class="hidden mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border-l-4 border-red-500 rounded-lg shadow-md">
             <div class="flex items-start space-x-3">
                 <div class="flex-shrink-0">
                     <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
                 </div>
                 <div class="flex-1">
-                    <p id="errorText" class="text-sm text-red-800 font-semibold"></p>
+                    <p id="errorText" class="text-sm text-red-800 dark:text-red-300 font-semibold"></p>
                 </div>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="mt-8 pt-6 border-t border-gray-200 text-center">
-            <p class="text-xs text-gray-500">
-                <i class="fas fa-lock mr-1"></i>Default password: <strong class="text-gray-700">12345</strong>
+        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                <i class="fas fa-lock mr-1"></i>Default password: <strong class="text-gray-700 dark:text-gray-300">12345</strong>
             </p>
         </div>
     </div>
@@ -234,6 +284,41 @@
                 errorContainer.classList.add('hidden');
             }, 5000);
         }
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            
+            // Update icon
+            if (newTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.classList.remove('fa-sun', 'text-yellow-400');
+                themeIcon.classList.add('fa-moon', 'text-gray-800');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            html.setAttribute('data-theme', savedTheme);
+            
+            if (savedTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+            }
+        });
     </script>
 </body>
 </html>

@@ -7,19 +7,60 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+        :root {
+            --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --nav-bg: #ffffff;
         }
+
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            --bg-card: rgba(30, 30, 46, 0.95);
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+            --nav-bg: #1f2937;
+        }
+
+        body {
+            background: var(--bg-primary);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
         .modal {
             backdrop-filter: blur(5px);
             background: rgba(0, 0, 0, 0.5);
         }
+
+        .card-dark {
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+
+        .text-dark-primary {
+            color: var(--text-primary);
+        }
+
+        .text-dark-secondary {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- Theme Toggle Button -->
+    <button 
+        id="themeToggle"
+        class="fixed top-20 right-4 z-50 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        onclick="toggleTheme()"
+    >
+        <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-400 text-xl"></i>
+    </button>
     <!-- Navbar -->
-    <nav class="bg-white shadow-lg sticky top-0 z-40">
+    <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-40 transition-colors">
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
@@ -27,8 +68,8 @@
                         <i class="fas fa-user text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-800">Halo, <span id="namaSiswa">-</span>!</h1>
-                        <p class="text-sm text-gray-500">XI TKJ 1</p>
+                        <h1 class="text-xl font-bold text-gray-800 dark:text-white">Halo, <span id="namaSiswa">-</span>!</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">XI TKJ 1</p>
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -74,16 +115,16 @@
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 py-8">
         <!-- Tanggal -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
             <div class="text-center">
                 <p class="text-gray-500 text-sm mb-2">Hari ini adalah</p>
-                <h2 class="text-3xl font-bold text-gray-800" id="tanggalHariIni">-</h2>
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white" id="tanggalHariIni">-</h2>
                 <p class="text-gray-600 mt-2" id="waktuHariIni">-</p>
             </div>
         </div>
 
         <!-- Status Absensi Hari Ini -->
-        <div id="statusContainer" class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div id="statusContainer" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
             <!-- Akan diisi oleh JavaScript -->
         </div>
 
@@ -111,10 +152,10 @@
 
     <!-- Modal Ganti Password -->
     <div id="passwordModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Ganti Password</h3>
-                <button onclick="closeModal('passwordModal')" class="text-gray-500 hover:text-gray-700">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Ganti Password</h3>
+                <button onclick="closeModal('passwordModal')" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -125,7 +166,7 @@
                         type="password" 
                         id="passwordLama"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none"
                     >
                 </div>
                 <div>
@@ -134,14 +175,14 @@
                         type="password" 
                         id="passwordBaru"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none"
                     >
                 </div>
                 <div class="flex space-x-3 pt-4">
                     <button 
                         type="button"
                         onclick="closeModal('passwordModal')"
-                        class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                        class="flex-1 px-4 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                     >
                         Batal
                     </button>
@@ -158,10 +199,10 @@
 
     <!-- Modal Lapor Sakit/Izin -->
     <div id="izinModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Lapor Sakit / Izin</h3>
-                <button onclick="closeModal('izinModal')" class="text-gray-500 hover:text-gray-700">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Lapor Sakit / Izin</h3>
+                <button onclick="closeModal('izinModal')" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -171,7 +212,7 @@
                     <select 
                         id="jenisIzin"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none"
                     >
                         <option value="">-- Pilih --</option>
                         <option value="sakit">Sakit</option>
@@ -185,14 +226,14 @@
                         rows="4"
                         required
                         placeholder="Tuliskan alasan Anda..."
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none resize-none"
                     ></textarea>
                 </div>
                 <div class="flex space-x-3 pt-4">
                     <button 
                         type="button"
                         onclick="closeModal('izinModal')"
-                        class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                        class="flex-1 px-4 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                     >
                         Batal
                     </button>
@@ -341,7 +382,7 @@
                             <i class="fas fa-question-circle text-gray-400 text-3xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-800 mb-2">Belum Absen</h3>
-                        <p class="text-gray-600">Silakan lakukan absensi kehadiran atau lapor sakit/izin</p>
+                        <p class="text-gray-600 dark:text-gray-400">Silakan lakukan absensi kehadiran atau lapor sakit/izin</p>
                     </div>
                 `;
             }
@@ -410,6 +451,40 @@
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
         }
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            
+            if (newTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.classList.remove('fa-sun', 'text-yellow-400');
+                themeIcon.classList.add('fa-moon', 'text-gray-800');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            html.setAttribute('data-theme', savedTheme);
+            
+            if (savedTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon', 'text-gray-800');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+            }
+        });
     </script>
 </body>
 </html>
