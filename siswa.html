@@ -187,6 +187,8 @@
         </div>
     </div>
 
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
     <script>
         let currentUser = null;
@@ -219,34 +221,33 @@
             document.getElementById('waktuHariIni').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         }
 
-        function renderStatusAbsen() {
+        async function renderStatusAbsen() {
             const statusContainer = document.getElementById('statusContainer');
             const absenContainer = document.getElementById('absenContainer');
             
-            const today = getTodayString();
-            const statusKey = `absen_${today}`;
-            const allData = JSON.parse(localStorage.getItem(statusKey)) || {};
-            const studentStatus = allData[currentUser.id];
-
-            if (studentStatus) {
+            // Ambil data terbaru dari Supabase
+            const student = await getSiswaById(currentUser.id);
+            
+            if (student && student.statusAbsenHariIni && student.statusAbsenHariIni !== 'belum_absen') {
                 // Sudah absen
+                const status = student.statusAbsenHariIni;
                 let statusColor = 'gray';
                 let statusIcon = 'question-circle';
                 let statusText = 'Belum Absen';
 
-                if (studentStatus.status === 'hadir') {
+                if (status === 'hadir') {
                     statusColor = 'green';
                     statusIcon = 'check-circle';
                     statusText = 'Hadir';
-                } else if (studentStatus.status === 'sakit') {
+                } else if (status === 'sakit') {
                     statusColor = 'yellow';
                     statusIcon = 'bed';
                     statusText = 'Sakit';
-                } else if (studentStatus.status === 'izin') {
+                } else if (status === 'izin') {
                     statusColor = 'blue';
                     statusIcon = 'file-alt';
                     statusText = 'Izin';
-                } else if (studentStatus.status === 'alpa') {
+                } else if (status === 'alpa') {
                     statusColor = 'red';
                     statusIcon = 'times-circle';
                     statusText = 'Alpa';
@@ -258,15 +259,12 @@
                             <i class="fas fa-${statusIcon} text-${statusColor}-500 text-3xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-800 mb-2">Status: ${statusText}</h3>
-                        ${studentStatus.alasan ? `<p class="text-gray-600">Alasan: ${studentStatus.alasan}</p>` : ''}
-                        <p class="text-gray-500 mt-2">${studentStatus.waktu}</p>
+                        <p class="text-gray-500 mt-2">Terakhir diupdate: ${new Date().toLocaleString('id-ID')}</p>
                     </div>
                 `;
 
                 // Sembunyikan tombol absen jika sudah absen
-                if (studentStatus.status !== 'belum') {
-                    absenContainer.classList.add('hidden');
-                }
+                absenContainer.classList.add('hidden');
             } else {
                 // Belum absen
                 statusContainer.innerHTML = `
@@ -282,46 +280,34 @@
         }
 
         function absenHadir() {
-            const today = getTodayString();
-            const statusKey = `absen_${today}`;
-            const allData = JSON.parse(localStorage.getItem(statusKey)) || {};
-            
-            allData[currentUser.id] = {
-                status: 'hadir',
-                waktu: new Date().toLocaleString('id-ID'),
-                alasan: ''
-            };
-
-            localStorage.setItem(statusKey, JSON.stringify(allData));
-            
-            alert('✅ Absensi berhasil! Anda telah tercatat HADIR.');
-            renderStatusAbsen();
+            // Update status_absen di Supabase
+            updateStatusAbsen(currentUser.id, 'hadir')
+                .then(success => {
+                    if (success) {
+                        alert('✅ Absensi berhasil! Anda telah tercatat HADIR.');
+                        renderStatusAbsen();
+                    }
+                });
         }
 
-        function handleIzin(e) {
+        async function handleIzin(e) {
             e.preventDefault();
             
             const jenisIzin = document.getElementById('jenisIzin').value;
             const alasanIzin = document.getElementById('alasanIzin').value;
 
-            const today = getTodayString();
-            const statusKey = `absen_${today}`;
-            const allData = JSON.parse(localStorage.getItem(statusKey)) || {};
+            // Update status_absen di Supabase
+            const success = await updateStatusAbsen(currentUser.id, jenisIzin);
             
-            allData[currentUser.id] = {
-                status: jenisIzin,
-                waktu: new Date().toLocaleString('id-ID'),
-                alasan: alasanIzin
-            };
-
-            localStorage.setItem(statusKey, JSON.stringify(allData));
-            
-            closeModal('izinModal');
-            alert(`✅ Laporan ${jenisIzin} berhasil dikirim.`);
-            renderStatusAbsen();
+            if (success) {
+                closeModal('izinModal');
+                alert(`✅ Laporan ${jenisIzin} berhasil dikirim.`);
+                renderStatusAbsen();
+                document.getElementById('izinForm').reset();
+            }
         }
 
-        function handleGantiPassword(e) {
+        async function handleGantiPassword(e) {
             e.preventDefault();
             
             const passwordLama = document.getElementById('passwordLama').value;
@@ -333,16 +319,13 @@
                 return;
             }
 
-            // Update password
-            const students = getSiswa();
-            const studentIndex = students.findIndex(s => s.id === currentUser.id);
+            // Update password di Supabase
+            const success = await updatePasswordSiswa(currentUser.id, passwordBaru);
             
-            if (studentIndex !== -1) {
-                students[studentIndex].password = passwordBaru;
-                localStorage.setItem('xi_tkj_1_siswa', JSON.stringify(students));
-                
-                // Update current user
+            if (success) {
+                // Update current user di sesi
                 currentUser.password = passwordBaru;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
                 
                 closeModal('passwordModal');
                 alert('✅ Password berhasil diubah!');

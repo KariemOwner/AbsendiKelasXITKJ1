@@ -127,6 +127,8 @@
         </div>
     </main>
 
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
     <script>
         let currentUser = null;
@@ -151,14 +153,12 @@
             updateSummary();
         });
 
-        function renderTabel() {
-            const students = getSiswa();
-            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+        async function renderTabel() {
+            const students = await getSiswa();
             const tbody = document.getElementById('tabelSiswa');
             
             tbody.innerHTML = students.map((siswa, index) => {
-                const statusData = todayData[siswa.id] || { status: 'belum', waktu: '-', alasan: '-' };
-                const statusConfig = getStatusConfig(statusData.status);
+                const statusConfig = getStatusConfig(siswa.statusAbsenHariIni || 'belum_absen');
                 
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
@@ -172,36 +172,36 @@
                                 ${statusConfig.label}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusData.waktu}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${statusData.alasan || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">-</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-wrap gap-2">
                                 <!-- Status Pills -->
                                 <div class="flex gap-1">
                                     <button 
                                         onclick="updateStatus('${siswa.id}', 'hadir')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'hadir' ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'hadir' ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}"
                                         title="Hadir"
                                     >
                                         H
                                     </button>
                                     <button 
                                         onclick="updateStatus('${siswa.id}', 'izin')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'izin' ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'izin' ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}"
                                         title="Izin"
                                     >
                                         I
                                     </button>
                                     <button 
                                         onclick="updateStatus('${siswa.id}', 'sakit')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'sakit' ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'sakit' ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}"
                                         title="Sakit"
                                     >
                                         S
                                     </button>
                                     <button 
                                         onclick="updateStatus('${siswa.id}', 'alpa')"
-                                        class="px-2 py-1 text-xs rounded-full transition-all ${statusData.status === 'alpa' ? 'bg-red-500 text-white ring-2 ring-red-300' : 'bg-red-100 text-red-700 hover:bg-red-200'}"
+                                        class="px-2 py-1 text-xs rounded-full transition-all ${siswa.statusAbsenHariIni === 'alpa' ? 'bg-red-500 text-white ring-2 ring-red-300' : 'bg-red-100 text-red-700 hover:bg-red-200'}"
                                         title="Alpa"
                                     >
                                         A
@@ -223,23 +223,22 @@
             }).join('');
         }
 
-        function updateSummary() {
-            const students = getSiswa();
-            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+        async function updateSummary() {
+            const students = await getSiswa();
             
             let countHadir = 0, countIzin = 0, countSakit = 0, countAlpa = 0, countBelum = 0;
             
             students.forEach(siswa => {
-                const statusData = todayData[siswa.id];
-                if (!statusData || statusData.status === 'belum') {
+                const status = siswa.statusAbsenHariIni || 'belum_absen';
+                if (status === 'belum_absen') {
                     countBelum++;
-                } else if (statusData.status === 'hadir') {
+                } else if (status === 'hadir') {
                     countHadir++;
-                } else if (statusData.status === 'izin') {
+                } else if (status === 'izin') {
                     countIzin++;
-                } else if (statusData.status === 'sakit') {
+                } else if (status === 'sakit') {
                     countSakit++;
-                } else if (statusData.status === 'alpa') {
+                } else if (status === 'alpa') {
                     countAlpa++;
                 }
             });
@@ -251,40 +250,33 @@
             document.getElementById('countBelum').textContent = countBelum;
         }
 
-        function updateStatus(studentId, newStatus) {
-            const todayData = JSON.parse(localStorage.getItem(statusKey)) || {};
+        async function updateStatus(studentId, newStatus) {
+            const success = await updateStatusAbsen(studentId, newStatus);
             
-            todayData[studentId] = {
-                status: newStatus,
-                waktu: new Date().toLocaleString('id-ID'),
-                alasan: newStatus !== 'hadir' && todayData[studentId] ? todayData[studentId].alasan : ''
-            };
-            
-            localStorage.setItem(statusKey, JSON.stringify(todayData));
-            
-            renderTabel();
-            updateSummary();
-            
-            // Feedback visual
-            const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
-            showNotification(`Status berhasil diubah menjadi ${statusNames[newStatus]}`);
+            if (success) {
+                // Re-render tabel dan summary setelah update berhasil
+                await renderTabel();
+                await updateSummary();
+                
+                // Feedback visual
+                const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
+                alert(`✅ Status berhasil diubah menjadi ${statusNames[newStatus]}`);
+            }
         }
 
-        function resetPassword(studentId, namaSiswa) {
+        async function resetPassword(studentId, namaSiswa) {
             if (confirm(`Apakah Anda yakin ingin mereset password ${namaSiswa} ke default (12345)?`)) {
-                const students = getSiswa();
-                const studentIndex = students.findIndex(s => s.id === studentId);
+                const success = await resetPasswordSiswa(studentId);
                 
-                if (studentIndex !== -1) {
-                    students[studentIndex].password = '12345';
-                    localStorage.setItem('xi_tkj_1_siswa', JSON.stringify(students));
-                    
-                    showNotification(`Password ${namaSiswa} berhasil direset!`);
+                if (success) {
+                    alert(`✅ Password ${namaSiswa} berhasil direset!`);
                 }
             }
         }
 
         function getStatusConfig(status) {
+            // Normalisasi status dari database (belum_absen -> belum)
+            const normalizedStatus = status.replace('_absen', '');
             const configs = {
                 hadir: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hadir' },
                 izin: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Izin' },
@@ -292,13 +284,7 @@
                 alpa: { bg: 'bg-red-100', text: 'text-red-800', label: 'Alpa' },
                 belum: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Belum' }
             };
-            return configs[status] || configs.belum;
-        }
-
-        function showNotification(message) {
-            // Buat notifikasi sederhana menggunakan alert untuk prototype
-            // Bisa dikembangkan dengan toast notification yang lebih elegan
-            console.log('Notification:', message);
+            return configs[normalizedStatus] || configs.belum;
         }
     </script>
 </body>
