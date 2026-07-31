@@ -107,8 +107,12 @@ module.exports = async (req, res) => {
   const { messages } = req.body;
   
   // Validasi: messages harus array dan tidak kosong
-  if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'Messages array is required' });
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: "Format pesan harus berupa array" });
+  }
+  
+  if (messages.length === 0) {
+    return res.status(400).json({ error: "Array pesan tidak boleh kosong" });
   }
   
   try {
