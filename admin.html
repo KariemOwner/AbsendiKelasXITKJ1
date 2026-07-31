@@ -781,7 +781,7 @@
             chatWindowOpen = !chatWindowOpen;
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
             if (!input) {
                 console.error("Elemen input chat tidak ditemukan!");
@@ -810,6 +810,37 @@
             // Clear input and scroll to bottom
             input.value = '';
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Render Loading AI
+            const loadingId = 'loading-' + Date.now();
+            messagesContainer.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Fetch API
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message }) 
+                });
+
+                const loadingEl = document.getElementById(loadingId);
+                if (!response.ok) {
+                    const errText = await response.text();
+                    if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Error API: HTTP ${response.status}</div>`;
+                    return;
+                }
+
+                const data = await response.json();
+                const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, sistem AI kebingungan.";
+
+                if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } catch (error) {
+                console.error("Gagal menembak backend:", error);
+                const loadingEl = document.getElementById(loadingId);
+                if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Koneksi putus: ${error.message}</div>`;
+            }
         }
 
         function handleChatKeypress(event) {
