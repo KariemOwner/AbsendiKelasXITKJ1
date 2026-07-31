@@ -645,102 +645,64 @@ async function sendMessage() {
     // Auto-scroll ke bawah
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    // Tampilkan indikator "mengetik..."
-    const typingIndicator = document.createElement('div');
-    typingIndicator.id = 'typingIndicator';
-    typingIndicator.className = 'flex justify-start mb-3';
-    typingIndicator.innerHTML = `
-        <div class="bg-gray-200 dark:bg-gray-700 px-4 py-3 rounded-2xl rounded-tl-none max-w-xs shadow-md">
-            <div class="flex space-x-1">
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
-            </div>
+    // 1. INDIKATOR LOADING: Buat bubble AI dengan teks "Sedang berpikir... 🤔"
+    const loadingBubble = document.createElement('div');
+    loadingBubble.id = 'loadingBubble';
+    loadingBubble.className = 'flex justify-start mb-3';
+    loadingBubble.innerHTML = `
+        <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
+            Sedang berpikir... 🤔
         </div>
     `;
-    chatMessages.appendChild(typingIndicator);
+    chatMessages.appendChild(loadingBubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
+    // 2. BLOK TRY-CATCH & FETCH YANG KETAT
     try {
-        // DEBUG: Mulai mengirim pesan
-        console.log("Mulai mengirim pesan...", message);
-        
-        // Fetch ke backend API
         const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: message })
         });
-        
-        // DEBUG: Response diterima
-        console.log("Response diterima:", response.status);
-        
-        // Hapus indikator mengetik
-        const indicator = document.getElementById('typingIndicator');
-        if (indicator) indicator.remove();
-        
-        // Coba parse response JSON untuk error handling yang lebih baik
-        let data;
-        try {
-            data = await response.json();
-        } catch (jsonError) {
-            // Jika response bukan JSON, lempar error dengan status
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+
         if (!response.ok) {
-            // Simpan responseData di error object untuk digunakan di catch block
-            const error = new Error(data.error || `HTTP error! status: ${response.status}`);
-            error.responseData = data;
-            throw error;
+            // Tangkap status HTTP (misal 404 atau 500)
+            const errText = await response.text();
+            throw new Error(`HTTP ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        
+        // Ambil reply dari struktur data yang benar (data.reply atau data.choices[0].message.content)
+        let aiReply = 'Maaf, terjadi kesalahan.';
+        if (data.reply) {
+            aiReply = data.reply;
+        } else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+            aiReply = data.choices[0].message.content;
         }
         
-        const aiReply = data.reply || 'Maaf, terjadi kesalahan.';
-        
-        // Tampilkan balasan AI
-        const aiBubble = document.createElement('div');
-        aiBubble.className = 'flex justify-start mb-3';
-        aiBubble.innerHTML = `
-            <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                ${escapeHtml(aiReply)}
-            </div>
-        `;
-        chatMessages.appendChild(aiBubble);
+        // Update bubble "Sedang berpikir..." dengan jawaban asli dari data
+        const loadingBubbleEl = document.getElementById('loadingBubble');
+        if (loadingBubbleEl) {
+            loadingBubbleEl.innerHTML = `
+                <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
+                    ${escapeHtml(aiReply)}
+                </div>
+            `;
+        }
         
     } catch (error) {
-        // DEBUG: Tangkap error secara eksplisit
-        console.error("Gagal melakukan fetch:", error);
+        console.error("Fetch API Error:", error);
         
-        console.error('Error sending message:', error);
-        
-        // Hapus indikator mengetik jika ada
-        const indicator = document.getElementById('typingIndicator');
-        if (indicator) indicator.remove();
-        
-        // Coba ambil pesan error dari response jika ada
-        let errorMessage = '⚠️ Maaf, gagal menghubungi AI. Silakan coba lagi.';
-        
-        // Jika error memiliki response JSON (dari backend)
-        if (error.responseData && typeof error.responseData === 'object') {
-            // Gunakan pesan error dari backend jika tersedia
-            errorMessage = error.responseData.error || errorMessage;
-            // Tambahkan emoji jika belum ada
-            if (!errorMessage.startsWith('⚠️') && !errorMessage.startsWith('❌')) {
-                errorMessage = '⚠️ ' + errorMessage;
-            }
+        // Update bubble "Sedang berpikir..." dengan pesan error merah agar terlihat oleh user
+        const loadingBubbleEl = document.getElementById('loadingBubble');
+        if (loadingBubbleEl) {
+            loadingBubbleEl.innerHTML = `
+                <div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
+                    Waduh, sistem gagal merespon: ${escapeHtml(error.message)}
+                </div>
+            `;
         }
-        
-        // Tampilkan pesan error
-        const errorBubble = document.createElement('div');
-        errorBubble.className = 'flex justify-start mb-3';
-        errorBubble.innerHTML = `
-            <div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                ${escapeHtml(errorMessage)}
-            </div>
-        `;
-        chatMessages.appendChild(errorBubble);
     }
     
     // Auto-scroll ke bawah
