@@ -618,38 +618,34 @@ function escapeHtml(text) {
 }
 
 /**
- * Kirim pesan ke API chatbot backend
+ * Fungsi sendMessage GLOBAL agar bisa dipanggil dari onclick di HTML
  */
-async function sendMessage() {
-    const inputEl = document.getElementById('chatInput'); 
-    if (!inputEl) return;
+window.sendMessage = async function() {
+    console.log("--> Fungsi sendMessage GLOBAL terpanggil!");
+    
+    // Sesuaikan selector dengan ID input kamu
+    const inputEl = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput'); 
+    if (!inputEl) return console.error("Elemen input chat tidak ditemukan!");
+    
     const text = inputEl.value.trim();
     if (!text) return;
-
-    // 1. Render pesan user (gunakan fungsi yang sudah ada)
     inputEl.value = '';
-    
-    const chatBox = document.getElementById('chatMessages');
-    if (!chatBox) return;
 
-    // Tampilkan pesan user
-    const userBubble = document.createElement('div');
-    userBubble.className = 'flex justify-end mb-3';
-    userBubble.innerHTML = `
-        <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-tr-none max-w-xs break-words shadow-md">
-            ${escapeHtml(text)}
-        </div>
-    `;
-    chatBox.appendChild(userBubble);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // Sesuaikan selector dengan ID container chat kamu
+    const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages') || document.getElementById('chatMessages'); 
     
-    // 2. Render Loading Bubble (WAJIB MUNCUL KE DOM)
+    // 1. Render bubble user (Sesuaikan class Tailwind dengan yang kamu pakai)
+    const userBubble = `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${escapeHtml(text)}</div></div>`;
+    chatBox.insertAdjacentHTML('beforeend', userBubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // 2. Render Loading AI (WAJIB MUNCUL)
     const loadingId = 'loading-' + Date.now();
-    const loadingHTML = `<div id="${loadingId}" class="flex justify-start mb-3"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`;
-    chatBox.insertAdjacentHTML('beforeend', loadingHTML);
+    const loadingBubble = `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`;
+    chatBox.insertAdjacentHTML('beforeend', loadingBubble);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 3. Fetch API
+    // 3. Fetch ke Backend
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -661,21 +657,21 @@ async function sendMessage() {
 
         if (!response.ok) {
             const errText = await response.text();
-            if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-500/20 text-red-400 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Waduh error: HTTP ${response.status} - ${errText}</div>`;
+            if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Error API: HTTP ${response.status}</div>`;
             return;
         }
 
         const data = await response.json();
-        const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Halo, maaf saya bingung.";
+        const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, format balasan AI tidak dikenali.";
         
-        // 4. Timpa loading dengan jawaban asli
+        // 4. Timpa loading dengan teks asli
         if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
 
     } catch (error) {
-        console.error("Fetch API Error:", error);
+        console.error("Gagal menembak backend:", error);
         const loadingEl = document.getElementById(loadingId);
-        if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-500/20 text-red-400 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Koneksi putus: ${error.message}</div>`;
+        if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sistem Terputus: ${error.message}</div>`;
     }
 }
 
@@ -685,7 +681,7 @@ async function sendMessage() {
 function handleChatKeypress(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        sendMessage();
+        window.sendMessage();
     }
 }
 
@@ -695,13 +691,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendChatBtn = document.getElementById('sendChatBtn');
 
     if (sendChatBtn) {
-        sendChatBtn.addEventListener('click', sendMessage);
+        sendChatBtn.addEventListener('click', window.sendMessage);
     }
 
     if (chatInput) {
         chatInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                sendMessage();
+                window.sendMessage();
             }
         });
     }
