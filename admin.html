@@ -487,7 +487,18 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${siswa.waktu}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">${siswa.alasan}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                            <div class="flex items-center gap-2">
+                                <span class="truncate">${siswa.alasan === '-' || !siswa.alasan ? '' : siswa.alasan}</span>
+                                <button 
+                                    onclick="editAlasan('${siswa.namaPanggilan}', '${siswa.alasan === '-' ? '' : siswa.alasan}')"
+                                    class="flex-shrink-0 p-1 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded transition-colors"
+                                    title="${siswa.alasan === '-' || !siswa.alasan ? 'Tambah Alasan' : 'Edit Alasan'}"
+                                >
+                                    <i class="fas fa-pencil-alt text-purple-500 text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-wrap gap-2">
                                 <!-- Status Pills -->
@@ -578,6 +589,54 @@
                 // Feedback visual
                 const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
                 alert(`✅ Status berhasil diubah menjadi ${statusNames[newStatus]}`);
+            }
+        }
+
+        /**
+         * Fungsi untuk edit/tambah alasan absen siswa
+         * @param {string} namaPanggilan - Nama panggilan siswa
+         * @param {string} alasanLama - Alasan sebelumnya (kosong jika belum ada)
+         */
+        async function editAlasan(namaPanggilan, alasanLama) {
+            // Prompt admin untuk memasukkan alasan baru
+            const alasanBaru = window.prompt('Masukkan alasan untuk ' + namaPanggilan + ':', alasanLama);
+            
+            // Jika admin menekan Cancel (null), batalkan fungsi
+            if (alasanBaru === null) {
+                return;
+            }
+            
+            // Validasi: jika admin mengisi teks atau mengosongkannya untuk menghapus alasan
+            const alasanFinal = alasanBaru.trim() === '' ? null : alasanBaru.trim();
+            
+            // Ambil status absen saat ini dari data yang sudah di-render
+            const students = window.siswaData || [];
+            const siswa = students.find(s => s.namaPanggilan === namaPanggilan);
+            const riwayatData = window.riwayatData || [];
+            const riwayat = riwayatData.find(r => r.nama_panggilan === namaPanggilan);
+            
+            // Tentukan status absen yang akan digunakan
+            let statusAbsenSaatIni = riwayat ? riwayat.status_absen : 'belum';
+            
+            // Jika belum ada status absen, set ke 'izin' sebagai default saat menambah alasan
+            if (statusAbsenSaatIni === 'belum' && alasanFinal !== null) {
+                statusAbsenSaatIni = 'izin';
+            }
+            
+            // Upsert data ke Supabase dengan alasan baru
+            const success = await upsertRiwayatAbsen(namaPanggilan, selectedDate, statusAbsenSaatIni, alasanFinal);
+            
+            if (success) {
+                // Re-render tabel setelah update berhasil
+                await renderTabel();
+                await updateSummary();
+                
+                // Feedback visual
+                if (alasanFinal) {
+                    alert(`✅ Alasan untuk ${namaPanggilan} berhasil disimpan: "${alasanFinal}"`);
+                } else {
+                    alert(`✅ Alasan untuk ${namaPanggilan} berhasil dihapus.`);
+                }
             }
         }
 
