@@ -618,6 +618,15 @@ function escapeHtml(text) {
 }
 
 /**
+ * ============================================
+ * CHATBOT DENGAN CONVERSATION HISTORY
+ * ============================================
+ */
+
+// Variabel global untuk menyimpan riwayat chat
+let chatHistory = [];
+
+/**
  * Fungsi sendMessage GLOBAL agar bisa dipanggil dari onclick di HTML
  */
 window.sendMessage = async function() {
@@ -630,6 +639,9 @@ window.sendMessage = async function() {
     const text = inputEl.value.trim();
     if (!text) return;
     inputEl.value = '';
+
+    // Simpan pesan user ke history
+    chatHistory.push({ role: "user", content: text });
 
     // Sesuaikan selector dengan ID container chat kamu
     const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages') || document.getElementById('chatMessages'); 
@@ -645,12 +657,12 @@ window.sendMessage = async function() {
     chatBox.insertAdjacentHTML('beforeend', loadingBubble);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 3. Fetch ke Backend
+    // 3. Fetch ke Backend dengan mengirim seluruh riwayat chat
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
+            body: JSON.stringify({ messages: chatHistory })
         });
 
         const loadingEl = document.getElementById(loadingId);
@@ -663,6 +675,9 @@ window.sendMessage = async function() {
 
         const data = await response.json();
         const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, format balasan AI tidak dikenali.";
+        
+        // Simpan balasan AI ke history
+        chatHistory.push({ role: "assistant", content: aiReply });
         
         // 4. Timpa loading dengan teks asli
         if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;

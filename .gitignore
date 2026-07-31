@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes. The changes only include HTML files (admin.html, siswa.html) which are source files and not build artifacts, dependencies, or temporary files.
+Nothing should be ignored based on the provided file changes, as they only include source files (.js files) without any build artifacts, dependencies, or temporary files.
