@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes. The changes only include HTML files (admin.html, siswa.html) which are source files and not build artifacts, dependencies, or temporary files.
+Nothing needs to be added to .gitignore since only a single HTML file was modified and it doesn't match any of the patterns that should be ignored.
