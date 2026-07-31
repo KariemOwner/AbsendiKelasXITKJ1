@@ -621,92 +621,62 @@ function escapeHtml(text) {
  * Kirim pesan ke API chatbot backend
  */
 async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
+    const inputEl = document.getElementById('chatInput'); 
+    if (!inputEl) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    // 1. Render pesan user (gunakan fungsi yang sudah ada)
+    inputEl.value = '';
     
-    if (!message) return;
-    
-    const chatMessages = document.getElementById('chatMessages');
-    if (!chatMessages) return;
-    
+    const chatBox = document.getElementById('chatMessages');
+    if (!chatBox) return;
+
     // Tampilkan pesan user
     const userBubble = document.createElement('div');
     userBubble.className = 'flex justify-end mb-3';
     userBubble.innerHTML = `
         <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-tr-none max-w-xs break-words shadow-md">
-            ${escapeHtml(message)}
+            ${escapeHtml(text)}
         </div>
     `;
-    chatMessages.appendChild(userBubble);
+    chatBox.appendChild(userBubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
     
-    // Clear input
-    input.value = '';
-    
-    // Auto-scroll ke bawah
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // 1. INDIKATOR LOADING: Buat bubble AI dengan teks "Sedang berpikir... 🤔"
-    const loadingBubble = document.createElement('div');
-    loadingBubble.id = 'loadingBubble';
-    loadingBubble.className = 'flex justify-start mb-3';
-    loadingBubble.innerHTML = `
-        <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-            Sedang berpikir... 🤔
-        </div>
-    `;
-    chatMessages.appendChild(loadingBubble);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // 2. BLOK TRY-CATCH & FETCH YANG KETAT
+    // 2. Render Loading Bubble (WAJIB MUNCUL KE DOM)
+    const loadingId = 'loading-' + Date.now();
+    const loadingHTML = `<div id="${loadingId}" class="flex justify-start mb-3"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`;
+    chatBox.insertAdjacentHTML('beforeend', loadingHTML);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // 3. Fetch API
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: message })
+            body: JSON.stringify({ message: text })
         });
 
+        const loadingEl = document.getElementById(loadingId);
+
         if (!response.ok) {
-            // Tangkap status HTTP (misal 404 atau 500)
             const errText = await response.text();
-            throw new Error(`HTTP ${response.status} - ${errText}`);
+            if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-500/20 text-red-400 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Waduh error: HTTP ${response.status} - ${errText}</div>`;
+            return;
         }
 
         const data = await response.json();
+        const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Halo, maaf saya bingung.";
         
-        // Ambil reply dari struktur data yang benar (data.reply atau data.choices[0].message.content)
-        let aiReply = 'Maaf, terjadi kesalahan.';
-        if (data.reply) {
-            aiReply = data.reply;
-        } else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-            aiReply = data.choices[0].message.content;
-        }
-        
-        // Update bubble "Sedang berpikir..." dengan jawaban asli dari data
-        const loadingBubbleEl = document.getElementById('loadingBubble');
-        if (loadingBubbleEl) {
-            loadingBubbleEl.innerHTML = `
-                <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                    ${escapeHtml(aiReply)}
-                </div>
-            `;
-        }
-        
+        // 4. Timpa loading dengan jawaban asli
+        if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
     } catch (error) {
         console.error("Fetch API Error:", error);
-        
-        // Update bubble "Sedang berpikir..." dengan pesan error merah agar terlihat oleh user
-        const loadingBubbleEl = document.getElementById('loadingBubble');
-        if (loadingBubbleEl) {
-            loadingBubbleEl.innerHTML = `
-                <div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                    Waduh, sistem gagal merespon: ${escapeHtml(error.message)}
-                </div>
-            `;
-        }
+        const loadingEl = document.getElementById(loadingId);
+        if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-500/20 text-red-400 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Koneksi putus: ${error.message}</div>`;
     }
-    
-    // Auto-scroll ke bawah
-    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 /**
