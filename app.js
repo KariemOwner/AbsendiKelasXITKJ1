@@ -699,23 +699,24 @@ async function sendMessage() {
         
         const aiReply = data.reply || 'Maaf, terjadi kesalahan.';
         
-        // --- LOGIKA AI AGENT (HIDDEN COMMAND) ---
+        // --- LOGIKA AI AGENT & DEBUGGING ---
+        console.log("Raw balasan AI:", aiReply); // INTIP BALASAN ASLI AI
+
         let displayText = aiReply;
         const commandRegex = /\|\|\|(.*?)\|\|\|/;
         const commandMatch = aiReply.match(commandRegex);
 
         if (commandMatch) {
+            console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
             try {
                 const cmd = JSON.parse(commandMatch[1]);
-                // Hapus kode rahasia dari teks yang akan ditampilkan ke UI
-                displayText = aiReply.replace(commandRegex, '').trim();
+                displayText = aiReply.replace(commandRegex, '').trim(); // Sembunyikan dari layar
                 
-                // Ambil tanggal dari input kalender di panel admin
                 const tglInput = document.getElementById('tanggalInput') || document.querySelector('input[type="date"]');
                 const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
                 const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
-                // Lakukan pencarian nama siswa dengan ilike (agar toleran terhadap typo) lalu Update/Upsert riwayat_absen
+                // Update database Supabase
                 (async () => {
                     const { data: siswa } = await supabaseClient
                         .from('siswa')
@@ -724,7 +725,7 @@ async function sendMessage() {
                         .single();
 
                     if (siswa) {
-                        await supabaseClient.from('riwayat_absen').upsert({
+                        const { error } = await supabaseClient.from('riwayat_absen').upsert({
                             nama_panggilan: siswa.nama_panggilan,
                             tanggal: selectedDate,
                             status_absen: cmd.status.toLowerCase(),
@@ -732,19 +733,21 @@ async function sendMessage() {
                             waktu: jamSekarang
                         }, { onConflict: 'nama_panggilan, tanggal' });
                         
-                        console.log("AI Agent sukses mengubah absen:", cmd);
-                        // Reload tabel secara otomatis dengan memanggil fungsi render tabelmu.
-                        // Jika kamu tidak tahu nama fungsi render tabelnya, gunakan fungsi bawaan browser ini:
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500); // Jeda 1.5 detik agar user sempat membaca balasan AI sebelum halaman berkedip
+                        if (error) {
+                            console.error("❌ Gagal update Supabase:", error);
+                        } else {
+                            console.log("🚀 Supabase SUKSES diupdate untuk:", siswa.nama_panggilan);
+                            setTimeout(() => { window.location.reload(); }, 1500); // Auto-refresh 1.5 detik
+                        }
                     } else {
-                        console.warn("AI Agent: Nama siswa tidak ditemukan di database.");
+                        console.warn("⚠️ Siswa tidak ditemukan di DB untuk query:", cmd.nama);
                     }
                 })();
             } catch (e) {
-                console.error("Gagal membaca hidden command AI:", e);
+                console.error("❌ JSON Parse error pada hidden command:", e);
             }
+        } else {
+            console.log("⚠️ Tidak ada hidden command dalam balasan AI.");
         }
         // ----------------------------------------
         

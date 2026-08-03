@@ -1,7 +1,13 @@
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const SYSTEM_PROMPT = "Kamu adalah asisten cerdas kelas XI TKJ 1. Jawab santai, gaul, tapi sopan. Singkat padat. Jika user meminta untuk mengubah, mengupdate, atau mengganti status absen seorang siswa (misal: 'tolong ubah Sultan jadi sakit'), kamu WAJIB menyisipkan kode rahasia di BARIS PALING AKHIR balasanmu dengan format TEPAT seperti ini: |||{\"nama\": \"Nama Siswa\", \"status\": \"hadir/izin/sakit/alpa\", \"alasan\": \"alasan jika ada atau -\"}|||. Jawablah juga dengan kalimat natural bahwa kamu telah memprosesnya.";
+const SYSTEM_PROMPT = {
+    role: "system",
+    content: `Kamu adalah Qwen, asisten AI ramah kelas XI TKJ 1. Jawab santai, gaul, tapi sopan. Singkat padat.
+PENTING MUTLAK: Jika user meminta mengubah, mengupdate, atau mengabsen siswa (misal: 'ubah ikram jadi hadir'), kamu WAJIB menyertakan JSON rahasia di baris paling akhir balasanmu persis seperti format ini:
+|||{"nama": "Ikram", "status": "hadir", "alasan": "-"}|||
+Jangan gunakan blok kode markdown, langsung ketik |||{...}||| di akhir kalimatmu.`
+};
 
 /**
  * Panggil API Qwen (DashScope)
@@ -24,7 +30,7 @@ async function callQwen(message) {
     body: JSON.stringify({
       model: 'qwen-plus',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        SYSTEM_PROMPT,
         { role: 'user', content: message }
       ],
       max_tokens: 500,
@@ -62,7 +68,7 @@ async function callGroq(message) {
     body: JSON.stringify({
       model: 'llama3-8b-8192',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        SYSTEM_PROMPT,
         { role: 'user', content: message }
       ],
       max_tokens: 500,
