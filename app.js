@@ -699,12 +699,62 @@ async function sendMessage() {
         
         const aiReply = data.reply || 'Maaf, terjadi kesalahan.';
         
+        // --- LOGIKA AI AGENT (HIDDEN COMMAND) ---
+        let displayText = aiReply;
+        const commandRegex = /\|\|\|(.*?)\|\|\|/;
+        const commandMatch = aiReply.match(commandRegex);
+
+        if (commandMatch) {
+            try {
+                const cmd = JSON.parse(commandMatch[1]);
+                // Hapus kode rahasia dari teks yang akan ditampilkan ke UI
+                displayText = aiReply.replace(commandRegex, '').trim();
+                
+                // Ambil tanggal dari input kalender di panel admin
+                const tglInput = document.getElementById('tanggalInput') || document.querySelector('input[type="date"]');
+                const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
+                const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+                // Lakukan pencarian nama siswa dengan ilike (agar toleran terhadap typo) lalu Update/Upsert riwayat_absen
+                (async () => {
+                    const { data: siswa } = await supabaseClient
+                        .from('siswa')
+                        .select('nama_panggilan')
+                        .ilike('nama_panggilan', `%${cmd.nama}%`)
+                        .single();
+
+                    if (siswa) {
+                        await supabaseClient.from('riwayat_absen').upsert({
+                            nama_panggilan: siswa.nama_panggilan,
+                            tanggal: selectedDate,
+                            status_absen: cmd.status.toLowerCase(),
+                            alasan: cmd.alasan || '-',
+                            waktu: jamSekarang
+                        }, { onConflict: 'nama_panggilan, tanggal' });
+                        
+                        console.log("AI Agent sukses mengubah absen:", cmd);
+                        // Trigger refresh tabel - reload halaman untuk update visual
+                        setTimeout(() => {
+                            if (typeof loadRiwayatAbsen === 'function') {
+                                loadRiwayatAbsen();
+                            }
+                        }, 500);
+                    } else {
+                        console.warn("AI Agent: Nama siswa tidak ditemukan di database.");
+                    }
+                })();
+            } catch (e) {
+                console.error("Gagal membaca hidden command AI:", e);
+            }
+        }
+        // ----------------------------------------
+        
         // Tampilkan balasan AI
         const aiBubble = document.createElement('div');
         aiBubble.className = 'flex justify-start mb-3';
         aiBubble.innerHTML = `
             <div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-2xl rounded-tl-none max-w-xs break-words shadow-md">
-                ${escapeHtml(aiReply)}
+                ${escapeHtml(displayText)}
             </div>
         `;
         chatMessages.appendChild(aiBubble);

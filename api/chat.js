@@ -1,7 +1,7 @@
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const SYSTEM_PROMPT = "Kamu adalah asisten cerdas kelas XI TKJ 1. Jawab santai, gaul, tapi sopan. Singkat padat.";
+const SYSTEM_PROMPT = "Kamu adalah asisten cerdas kelas XI TKJ 1. Jawab santai, gaul, tapi sopan. Singkat padat. Jika user meminta untuk mengubah, mengupdate, atau mengganti status absen seorang siswa (misal: 'tolong ubah Sultan jadi sakit'), kamu WAJIB menyisipkan kode rahasia di BARIS PALING AKHIR balasanmu dengan format TEPAT seperti ini: |||{\"nama\": \"Nama Siswa\", \"status\": \"hadir/izin/sakit/alpa\", \"alasan\": \"alasan jika ada atau -\"}|||. Jawablah juga dengan kalimat natural bahwa kamu telah memprosesnya.";
 
 /**
  * Panggil API Qwen (DashScope)
