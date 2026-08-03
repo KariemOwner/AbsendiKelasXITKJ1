@@ -630,64 +630,80 @@ let chatHistory = [];
  * Fungsi sendMessage GLOBAL agar bisa dipanggil dari onclick di HTML
  */
 window.sendMessage = async function() {
-    console.log("--> Fungsi sendMessage GLOBAL terpanggil!");
-    
-    // Sesuaikan selector dengan ID input kamu
-    const inputEl = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput'); 
-    if (!inputEl) return console.error("Elemen input chat tidak ditemukan!");
-    
+    const inputEl = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput');
+    if (!inputEl) return;
     const text = inputEl.value.trim();
     if (!text) return;
     inputEl.value = '';
 
-    // Simpan pesan user ke history
-    chatHistory.push({ role: "user", content: text });
+    const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages');
 
-    // Sesuaikan selector dengan ID container chat kamu
-    const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages') || document.getElementById('chatMessages'); 
-    
-    // 1. Render bubble user (Sesuaikan class Tailwind dengan yang kamu pakai)
-    const userBubble = `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${escapeHtml(text)}</div></div>`;
-    chatBox.insertAdjacentHTML('beforeend', userBubble);
+    // Render User
+    chatBox.insertAdjacentHTML('beforeend', `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${text}</div></div>`);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 2. Render Loading AI (WAJIB MUNCUL)
+    // Setup History
+    if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
+    window.chatHistory.push({ role: "user", content: text });
+
+    // Render Loading
     const loadingId = 'loading-' + Date.now();
-    const loadingBubble = `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`;
-    chatBox.insertAdjacentHTML('beforeend', loadingBubble);
+    chatBox.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 3. Fetch ke Backend dengan mengirim seluruh riwayat chat
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: [...chatHistory] })
+            body: JSON.stringify({ messages: window.chatHistory })
         });
 
         const loadingEl = document.getElementById(loadingId);
-
-        if (!response.ok) {
-            const errText = await response.text();
-            if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Error API: HTTP ${response.status}</div>`;
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
-        const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, format balasan AI tidak dikenali.";
+        let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, error.";
         
-        // Simpan balasan AI ke history
-        chatHistory.push({ role: "assistant", content: aiReply });
-        
-        // 4. Timpa loading dengan teks asli
-        if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;
+        console.log("Raw balasan AI:", aiReply); // CCTV Console
+        window.chatHistory.push({ role: "assistant", content: aiReply });
+
+        let displayText = aiReply;
+        const commandRegex = /\|\|\|(.*?)\|\|\|/;
+        const commandMatch = aiReply.match(commandRegex);
+
+        if (commandMatch) {
+            console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
+            try {
+                const cmd = JSON.parse(commandMatch[1]);
+                displayText = aiReply.replace(commandRegex, '').trim(); 
+                
+                const tglInput = document.querySelector('input[type="date"]');
+                const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
+                const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+                const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
+
+                if (siswa) {
+                    const { error } = await supabaseClient.from('riwayat_absen').upsert({
+                        nama_panggilan: siswa.nama_panggilan,
+                        tanggal: selectedDate,
+                        status_absen: cmd.status.toLowerCase(),
+                        alasan: cmd.alasan || '-',
+                        waktu: jamSekarang
+                    }, { onConflict: 'nama_panggilan, tanggal' });
+                    
+                    if (!error) {
+                        console.log("🚀 Supabase SUKSES diupdate!");
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    }
+                }
+            } catch (e) { console.error("❌ Error JSON Parse:", e); }
+        }
+
+        if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${displayText}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
 
-    } catch (error) {
-        console.error("Gagal menembak backend:", error);
-        const loadingEl = document.getElementById(loadingId);
-        if(loadingEl) loadingEl.innerHTML = `<div class="bg-red-900/50 text-red-300 border border-red-500 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sistem Terputus: ${error.message}</div>`;
-    }
+    } catch (error) { console.error("Fetch Error:", error); }
 }
 
 /**
