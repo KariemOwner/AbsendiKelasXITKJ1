@@ -349,10 +349,12 @@
                         type="text" 
                         id="chatInput"
                         placeholder="Ketik pesan..."
+                        onkeypress="if(event.key === 'Enter') sendMessage()"
                         class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-purple-500"
                     >
                     <button 
                         id="sendChatBtn"
+                        onclick="sendMessage()"
                         class="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     >
                         <i class="fas fa-paper-plane text-white text-sm"></i>
@@ -816,12 +818,16 @@
             messagesContainer.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
+            // Setup History
+            if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
+            window.chatHistory.push({ role: "user", content: message });
+
             // Fetch API
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message }) 
+                    body: JSON.stringify({ messages: window.chatHistory }) 
                 });
 
                 const loadingEl = document.getElementById(loadingId);
@@ -832,9 +838,45 @@
                 }
 
                 const data = await response.json();
-                const aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, sistem AI kebingungan.";
+                let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, sistem AI kebingungan.";
 
-                if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${aiReply}</div>`;
+                console.log("Raw balasan AI:", aiReply); // CCTV Console WAJIB MUNCUL
+                window.chatHistory.push({ role: "assistant", content: aiReply });
+
+                let displayText = aiReply;
+                const commandRegex = /\|\|\|(.*?)\|\|\|/;
+                const commandMatch = aiReply.match(commandRegex);
+
+                if (commandMatch) {
+                    console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
+                    try {
+                        const cmd = JSON.parse(commandMatch[1]);
+                        displayText = aiReply.replace(commandRegex, '').trim(); 
+                        
+                        const tglInput = document.querySelector('input[type="date"]');
+                        const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
+                        const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+                        const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
+
+                        if (siswa) {
+                            const { error } = await supabaseClient.from('riwayat_absen').upsert({
+                                nama_panggilan: siswa.nama_panggilan,
+                                tanggal: selectedDate,
+                                status_absen: cmd.status.toLowerCase(),
+                                alasan: cmd.alasan || '-',
+                                waktu: jamSekarang
+                            }, { onConflict: 'nama_panggilan, tanggal' });
+                            
+                            if (!error) {
+                                console.log("🚀 Supabase SUKSES diupdate!");
+                                setTimeout(() => { window.location.reload(); }, 1500);
+                            }
+                        }
+                    } catch (e) { console.error("❌ Error JSON Parse:", e); }
+                }
+
+                if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${displayText}</div>`;
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             } catch (error) {
                 console.error("Gagal menembak backend:", error);
