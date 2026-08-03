@@ -733,12 +733,11 @@ async function sendMessage() {
                         }, { onConflict: 'nama_panggilan, tanggal' });
                         
                         console.log("AI Agent sukses mengubah absen:", cmd);
-                        // Trigger refresh tabel - reload halaman untuk update visual
+                        // Reload tabel secara otomatis dengan memanggil fungsi render tabelmu.
+                        // Jika kamu tidak tahu nama fungsi render tabelnya, gunakan fungsi bawaan browser ini:
                         setTimeout(() => {
-                            if (typeof loadRiwayatAbsen === 'function') {
-                                loadRiwayatAbsen();
-                            }
-                        }, 500);
+                            window.location.reload();
+                        }, 1500); // Jeda 1.5 detik agar user sempat membaca balasan AI sebelum halaman berkedip
                     } else {
                         console.warn("AI Agent: Nama siswa tidak ditemukan di database.");
                     }
