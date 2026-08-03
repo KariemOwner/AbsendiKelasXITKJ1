@@ -619,118 +619,106 @@ function escapeHtml(text) {
 
 /**
  * ============================================
- * CHATBOT DENGAN CONVERSATION HISTORY
+ * CHATBOT DENGAN CONVERSATION HISTORY - REWRITE TOTAL
+ * Menggunakan cloneNode untuk menghapus event listener lama
  * ============================================
  */
 
 // Variabel global untuk menyimpan riwayat chat
 let chatHistory = [];
 
-/**
- * Fungsi sendMessage GLOBAL agar bisa dipanggil dari onclick di HTML
- */
-window.sendMessage = async function() {
-    const inputEl = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput');
-    if (!inputEl) return;
-    const text = inputEl.value.trim();
-    if (!text) return;
-    inputEl.value = '';
-
+// Event Listener untuk tombol kirim dan input chat - REWRITE TOTAL dengan cloneNode
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Ambil elemen tombol dan input (SESUAIKAN ID/CLASS DENGAN HTML-MU)
+    const chatInput = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput');
+    const chatSendBtn = chatInput ? chatInput.nextElementSibling : null; // Asumsi tombol ada di sebelah input
     const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages');
 
-    // Render User
-    chatBox.insertAdjacentHTML('beforeend', `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${text}</div></div>`);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (chatInput && chatSendBtn && chatBox) {
+        // 2. JURUS CLONE: Hapus semua event listener lama dari tombol!
+        const newSendBtn = chatSendBtn.cloneNode(true);
+        chatSendBtn.parentNode.replaceChild(newSendBtn, chatSendBtn);
 
-    // Setup History
-    if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
-    window.chatHistory.push({ role: "user", content: text });
+        // 3. Pasang Event Listener BARU ke tombol yang sudah bersih
+        newSendBtn.addEventListener('click', async () => {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            chatInput.value = '';
 
-    // Render Loading
-    const loadingId = 'loading-' + Date.now();
-    chatBox.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`);
-    chatBox.scrollTop = chatBox.scrollHeight;
+            // Render User
+            chatBox.insertAdjacentHTML('beforeend', `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${text}</div></div>`);
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: window.chatHistory })
-        });
+            if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
+            window.chatHistory.push({ role: "user", content: text });
 
-        const loadingEl = document.getElementById(loadingId);
-        if (!response.ok) return;
+            // Render Loading
+            const loadingId = 'loading-' + Date.now();
+            chatBox.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="flex justify-start mb-4"><div class="bg-gray-700 text-gray-200 text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">Sedang berpikir... 🤔</div></div>`);
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-        const data = await response.json();
-        let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, error.";
-        
-        console.log("Raw balasan AI:", aiReply); // CCTV Console
-        window.chatHistory.push({ role: "assistant", content: aiReply });
-
-        let displayText = aiReply;
-        const commandRegex = /\|\|\|(.*?)\|\|\|/;
-        const commandMatch = aiReply.match(commandRegex);
-
-        if (commandMatch) {
-            console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
             try {
-                const cmd = JSON.parse(commandMatch[1]);
-                displayText = aiReply.replace(commandRegex, '').trim(); 
-                
-                const tglInput = document.querySelector('input[type="date"]');
-                const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
-                const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: window.chatHistory })
+                });
 
-                const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
+                const loadingEl = document.getElementById(loadingId);
+                if (!response.ok) return;
 
-                if (siswa) {
-                    const { error } = await supabaseClient.from('riwayat_absen').upsert({
-                        nama_panggilan: siswa.nama_panggilan,
-                        tanggal: selectedDate,
-                        status_absen: cmd.status.toLowerCase(),
-                        alasan: cmd.alasan || '-',
-                        waktu: jamSekarang
-                    }, { onConflict: 'nama_panggilan, tanggal' });
-                    
-                    if (!error) {
-                        console.log("🚀 Supabase SUKSES diupdate!");
-                        setTimeout(() => { window.location.reload(); }, 1500);
-                    }
+                const data = await response.json();
+                let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, error.";
+
+                console.log("Raw balasan AI:", aiReply); // CCTV Console WAJIB MUNCUL
+                window.chatHistory.push({ role: "assistant", content: aiReply });
+
+                let displayText = aiReply;
+                const commandRegex = /\|\|\|(.*?)\|\|\|/;
+                const commandMatch = aiReply.match(commandRegex);
+
+                if (commandMatch) {
+                    console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
+                    try {
+                        const cmd = JSON.parse(commandMatch[1]);
+                        displayText = aiReply.replace(commandRegex, '').trim(); 
+                        
+                        const tglInput = document.querySelector('input[type="date"]');
+                        const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
+                        const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+                        const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
+
+                        if (siswa) {
+                            const { error } = await supabaseClient.from('riwayat_absen').upsert({
+                                nama_panggilan: siswa.nama_panggilan,
+                                tanggal: selectedDate,
+                                status_absen: cmd.status.toLowerCase(),
+                                alasan: cmd.alasan || '-',
+                                waktu: jamSekarang
+                            }, { onConflict: 'nama_panggilan, tanggal' });
+                            
+                            if (!error) {
+                                console.log("🚀 Supabase SUKSES diupdate!");
+                                setTimeout(() => { window.location.reload(); }, 1500);
+                            }
+                        }
+                    } catch (e) { console.error("❌ Error JSON Parse:", e); }
                 }
-            } catch (e) { console.error("❌ Error JSON Parse:", e); }
-        }
 
-        if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${displayText}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+                if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${displayText}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
 
-    } catch (error) { console.error("Fetch Error:", error); }
-}
-
-/**
- * Handle Enter key pada chat input
- */
-function handleChatKeypress(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        window.sendMessage();
-    }
-}
-
-// Event Listener untuk tombol kirim dan input chat
-document.addEventListener('DOMContentLoaded', () => {
-    const chatInput = document.getElementById('chatInput');
-    const sendChatBtn = document.getElementById('sendChatBtn');
-
-    if (sendChatBtn) {
-        sendChatBtn.addEventListener('click', window.sendMessage);
-    }
-
-    if (chatInput) {
-        chatInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                window.sendMessage();
-            }
+            } catch (error) { console.error("Fetch Error:", error); }
         });
+
+        // Tambahkan juga event listener untuk tombol Enter di input
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') newSendBtn.click();
+        });
+
+    } else {
+        console.error("Elemen UI Chat tidak ditemukan, pastikan selectornya benar!");
     }
 });
 
