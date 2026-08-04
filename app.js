@@ -684,24 +684,52 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Ambil tanggal dari input atau fallback ke hari ini
                         const tglInput = document.querySelector('input[type="date"]');
                         const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
+                        const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
                         // Panggil Supabase
                         const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
 
                         if (siswa) {
-                            const { error } = await supabaseClient
+                            // 1. Cek apakah riwayat absen untuk siswa dan tanggal tersebut sudah ada di database
+                            const { data: existingData } = await supabaseClient
                                 .from('riwayat_absen')
-                                .update({
-                                    status_absen: cmd.status.toLowerCase(),
-                                    alasan: cmd.alasan || '-',
-                                    waktu_absen: new Date().toISOString()
-                                })
+                                .select('id')
                                 .eq('nama_panggilan', siswa.nama_panggilan)
-                                .eq('tanggal', selectedDate);
-                            
-                            if (!error) {
-                                console.log("🚀 Supabase SUKSES diupdate untuk:", siswa.nama_panggilan);
-                                setTimeout(() => { window.location.reload(); }, 1500); // Otomatis refresh tabel
+                                .eq('tanggal', selectedDate)
+                                .maybeSingle();
+
+                            let dbError = null;
+
+                            if (existingData) {
+                                // Jika barisnya sudah ada, lakukan UPDATE berdasarkan ID
+                                const updateRes = await supabaseClient
+                                    .from('riwayat_absen')
+                                    .update({
+                                        status_absen: cmd.status.toLowerCase(),
+                                        alasan: cmd.alasan || '-',
+                                        waktu: jamSekarang
+                                    })
+                                    .eq('id', existingData.id);
+                                dbError = updateRes.error;
+                            } else {
+                                // Jika barisnya belum ada, lakukan INSERT data baru
+                                const insertRes = await supabaseClient
+                                    .from('riwayat_absen')
+                                    .insert({
+                                        nama_panggilan: siswa.nama_panggilan,
+                                        tanggal: selectedDate,
+                                        status_absen: cmd.status.toLowerCase(),
+                                        alasan: cmd.alasan || '-',
+                                        waktu: jamSekarang
+                                    });
+                                dbError = insertRes.error;
+                            }
+
+                            if (dbError) {
+                                console.error("❌ Gagal simpan ke Supabase:", dbError);
+                            } else {
+                                console.log("🚀 Supabase SUKSES disimpan!");
+                                setTimeout(() => { window.location.reload(); }, 1500); // Auto-refresh layar
                             }
                         } else {
                             console.warn("⚠️ Nama siswa tidak cocok dengan database!");
