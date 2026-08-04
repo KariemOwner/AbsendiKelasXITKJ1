@@ -407,8 +407,6 @@ window.updateStatusAbsen = updateStatusAbsen;
 window.upsertRiwayatAbsen = upsertRiwayatAbsen;
 window.getRiwayatAbsenByTanggal = getRiwayatAbsenByTanggal;
 window.formatWaktu = formatWaktu;
-window.exportToCSV = exportToCSV;
-window.exportBulananToCSV = exportBulananToCSV;
 
 // ============================================
 // 7. FUNGSI EXPORT CSV
@@ -624,11 +622,13 @@ function escapeHtml(text) {
  * ============================================
  */
 
-// Variabel global untuk menyimpan riwayat chat
-let chatHistory = [];
-
 // Event Listener untuk tombol kirim dan input chat - REWRITE TOTAL dengan cloneNode
 document.addEventListener('DOMContentLoaded', () => {
+    // Inisialisasi chatHistory jika belum ada
+    if (typeof window.chatHistory === 'undefined') {
+        window.chatHistory = [];
+    }
+
     // 1. Ambil elemen tombol dan input (SESUAIKAN ID/CLASS DENGAN HTML-MU)
     const chatInput = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput');
     const chatSendBtn = chatInput ? chatInput.nextElementSibling : null; // Asumsi tombol ada di sebelah input
@@ -649,7 +649,6 @@ document.addEventListener('DOMContentLoaded', () => {
             chatBox.insertAdjacentHTML('beforeend', `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white text-sm py-2 px-3 rounded-bl-xl rounded-tl-xl rounded-tr-xl">${text}</div></div>`);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
             window.chatHistory.push({ role: "user", content: text });
 
             // Render Loading
@@ -668,10 +667,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) return;
 
                 const data = await response.json();
-                let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, error.";
 
-                console.log("Raw balasan AI:", aiReply); // CCTV Console WAJIB MUNCUL
-                window.chatHistory.push({ role: "assistant", content: aiReply });
+                // --- SUNTIKAN KODE AI AGENT ---
+                let aiReply = data.reply || (data.choices && data.choices[0].message.content) || "Maaf, sistem error.";
+                console.log("Raw balasan AI:", aiReply); // WAJIB ADA UNTUK CCTV
 
                 let displayText = aiReply;
                 const commandRegex = /\|\|\|(.*?)\|\|\|/;
@@ -681,12 +680,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("✅ Hidden command terdeteksi:", commandMatch[1]);
                     try {
                         const cmd = JSON.parse(commandMatch[1]);
+                        // Hapus kode dari layar
                         displayText = aiReply.replace(commandRegex, '').trim(); 
                         
+                        // Ambil tanggal dari input atau fallback ke hari ini
                         const tglInput = document.querySelector('input[type="date"]');
                         const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
                         const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
+                        // Panggil Supabase
                         const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
 
                         if (siswa) {
@@ -699,12 +701,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             }, { onConflict: 'nama_panggilan, tanggal' });
                             
                             if (!error) {
-                                console.log("🚀 Supabase SUKSES diupdate!");
-                                setTimeout(() => { window.location.reload(); }, 1500);
+                                console.log("🚀 Supabase SUKSES diupdate untuk:", siswa.nama_panggilan);
+                                setTimeout(() => { window.location.reload(); }, 1500); // Otomatis refresh tabel
                             }
+                        } else {
+                            console.warn("⚠️ Nama siswa tidak cocok dengan database!");
                         }
-                    } catch (e) { console.error("❌ Error JSON Parse:", e); }
+                    } catch (e) {
+                        console.error("❌ Error membaca format command:", e);
+                    }
                 }
+                // ------------------------------------
+
+                window.chatHistory.push({ role: "assistant", content: aiReply });
 
                 if(loadingEl) loadingEl.innerHTML = `<div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm py-2 px-3 rounded-br-xl rounded-tr-xl rounded-tl-xl">${displayText}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -721,5 +730,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Elemen UI Chat tidak ditemukan, pastikan selectornya benar!");
     }
 });
+
+// Export fungsi CSV agar bisa diakses dari HTML
+window.exportToCSV = exportToCSV;
+window.exportBulananToCSV = exportBulananToCSV;
 
 console.log('✅ app.js loaded successfully - Connected to Supabase with supabaseClient');
