@@ -855,7 +855,6 @@
                         
                         const tglInput = document.querySelector('input[type="date"]');
                         const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
-                        const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
                         const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
 
@@ -878,7 +877,7 @@
                                     .update({
                                         status_absen: cmd.status.toLowerCase(),
                                         alasan: cmd.alasan || '-',
-                                        waktu: jamSekarang
+                                        waktu_absen: new Date().toISOString()
                                     })
                                     .eq('id', existingData.id);
                                 dbError = updateRes.error;
@@ -891,7 +890,7 @@
                                         tanggal: selectedDate,
                                         status_absen: cmd.status.toLowerCase(),
                                         alasan: cmd.alasan || '-',
-                                        waktu: jamSekarang
+                                        waktu_absen: new Date().toISOString()
                                     });
                                 dbError = insertRes.error;
                             }
