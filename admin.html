@@ -581,7 +581,7 @@
         }
 
         async function updateStatus(studentId, namaSiswa, newStatus) {
-            const success = await upsertRiwayatAbsen(namaSiswa, selectedDate, newStatus);
+            const success = await updateRiwayatAbsen(namaSiswa, selectedDate, newStatus);
             
             if (success) {
                 // Re-render tabel dan summary setelah update berhasil
@@ -626,7 +626,7 @@
             }
             
             // Upsert data ke Supabase dengan alasan baru
-            const success = await upsertRiwayatAbsen(namaPanggilan, selectedDate, statusAbsenSaatIni, alasanFinal);
+            const success = await updateRiwayatAbsen(namaPanggilan, selectedDate, statusAbsenSaatIni, alasanFinal);
             
             if (success) {
                 // Re-render tabel setelah update berhasil
