@@ -469,7 +469,7 @@
         function absenHadir() {
             // Upsert ke tabel riwayat_absen
             const today = getTodayString();
-            upsertRiwayatAbsen(currentUser.namaPanggilan, today, 'hadir')
+            updateRiwayatAbsen(currentUser.namaPanggilan, today, 'hadir')
                 .then(success => {
                     if (success) {
                         alert('✅ Absensi berhasil! Anda telah tercatat HADIR.');
@@ -486,7 +486,7 @@
 
             // Upsert ke tabel riwayat_absen dengan alasan
             const today = getTodayString();
-            const success = await upsertRiwayatAbsen(currentUser.namaPanggilan, today, jenisIzin, alasanIzin);
+            const success = await updateRiwayatAbsen(currentUser.namaPanggilan, today, jenisIzin, alasanIzin);
             
             if (success) {
                 closeModal('izinModal');

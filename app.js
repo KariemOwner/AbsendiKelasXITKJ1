@@ -217,34 +217,32 @@ async function updateStatusAbsen(id, newStatus) {
 }
 
 /**
- * Upsert data absensi ke tabel riwayat_absen
+ * Update data absensi ke tabel riwayat_absen (hanya UPDATE, bukan upsert)
  * @param {string} namaPanggilan - Nama panggilan siswa
  * @param {string} tanggal - Tanggal dalam format YYYY-MM-DD
  * @param {string} statusAbsen - Status absen (hadir, izin, sakit, alpa)
  * @param {string} alasan - Alasan absen (opsional, untuk sakit/izin)
  * @returns {Promise<boolean>} Success status
  */
-async function upsertRiwayatAbsen(namaPanggilan, tanggal, statusAbsen, alasan = null) {
+async function updateRiwayatAbsen(namaPanggilan, tanggal, statusAbsen, alasan = null) {
     try {
-        // Tidak perlu mengirim waktu_absen karena database menggunakan DEFAULT CURRENT_TIMESTAMP
-        const { data, error } = await supabaseClient
+        const { error } = await supabaseClient
             .from('riwayat_absen')
-            .upsert({ 
-                nama_panggilan: namaPanggilan, 
-                tanggal: tanggal, 
+            .update({ 
                 status_absen: statusAbsen,
-                alasan: alasan
-            }, { 
-                onConflict: 'nama_panggilan, tanggal' 
-            });
+                alasan: alasan,
+                waktu_absen: new Date().toISOString()
+            })
+            .eq('nama_panggilan', namaPanggilan)
+            .eq('tanggal', tanggal);
         
         if (error) throw error;
         
-        console.log(`✅ Riwayat absen berhasil di-upsert: ${namaPanggilan} - ${tanggal} - ${statusAbsen}`);
+        console.log(`✅ Riwayat absen berhasil diupdate: ${namaPanggilan} - ${tanggal} - ${statusAbsen}`);
         return true;
     } catch (err) {
-        console.error('❌ Error upsert riwayat absen:', err.message);
-        alert('⚠️ Gagal menyimpan riwayat absen.');
+        console.error('❌ Error update riwayat absen:', err.message);
+        alert('⚠️ Gagal mengupdate riwayat absen.');
         return false;
     }
 }
@@ -404,7 +402,7 @@ window.debugMode = debugMode;
 window.updatePasswordSiswa = updatePasswordSiswa;
 window.resetPasswordSiswa = resetPasswordSiswa;
 window.updateStatusAbsen = updateStatusAbsen;
-window.upsertRiwayatAbsen = upsertRiwayatAbsen;
+window.updateRiwayatAbsen = updateRiwayatAbsen;
 window.getRiwayatAbsenByTanggal = getRiwayatAbsenByTanggal;
 window.formatWaktu = formatWaktu;
 
@@ -686,19 +684,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Ambil tanggal dari input atau fallback ke hari ini
                         const tglInput = document.querySelector('input[type="date"]');
                         const selectedDate = tglInput ? tglInput.value : new Date().toISOString().split('T')[0];
-                        const jamSekarang = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
                         // Panggil Supabase
                         const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
 
                         if (siswa) {
-                            const { error } = await supabaseClient.from('riwayat_absen').upsert({
-                                nama_panggilan: siswa.nama_panggilan,
-                                tanggal: selectedDate,
-                                status_absen: cmd.status.toLowerCase(),
-                                alasan: cmd.alasan || '-',
-                                waktu: jamSekarang
-                            }, { onConflict: 'nama_panggilan, tanggal' });
+                            const { error } = await supabaseClient
+                                .from('riwayat_absen')
+                                .update({
+                                    status_absen: cmd.status.toLowerCase(),
+                                    alasan: cmd.alasan || '-',
+                                    waktu_absen: new Date().toISOString()
+                                })
+                                .eq('nama_panggilan', siswa.nama_panggilan)
+                                .eq('tanggal', selectedDate);
                             
                             if (!error) {
                                 console.log("🚀 Supabase SUKSES diupdate untuk:", siswa.nama_panggilan);
