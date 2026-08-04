@@ -226,17 +226,42 @@ async function updateStatusAbsen(id, newStatus) {
  */
 async function updateRiwayatAbsen(namaPanggilan, tanggal, statusAbsen, alasan = null) {
     try {
-        const { error } = await supabaseClient
+        // Cek dulu apakah data sudah ada
+        const { data: existingData, error: checkError } = await supabaseClient
             .from('riwayat_absen')
-            .update({ 
-                status_absen: statusAbsen,
-                alasan: alasan,
-                waktu_absen: new Date().toISOString()
-            })
+            .select('id')
             .eq('nama_panggilan', namaPanggilan)
-            .eq('tanggal', tanggal);
+            .eq('tanggal', tanggal)
+            .maybeSingle();
         
-        if (error) throw error;
+        if (checkError) throw checkError;
+        
+        let result;
+        
+        if (existingData) {
+            // Jika sudah ada, lakukan UPDATE
+            result = await supabaseClient
+                .from('riwayat_absen')
+                .update({ 
+                    status_absen: statusAbsen,
+                    alasan: alasan,
+                    waktu_absen: new Date().toISOString()
+                })
+                .eq('id', existingData.id);
+        } else {
+            // Jika belum ada, lakukan INSERT
+            result = await supabaseClient
+                .from('riwayat_absen')
+                .insert({ 
+                    nama_panggilan: namaPanggilan,
+                    tanggal: tanggal,
+                    status_absen: statusAbsen,
+                    alasan: alasan,
+                    waktu_absen: new Date().toISOString()
+                });
+        }
+        
+        if (result.error) throw result.error;
         
         console.log(`✅ Riwayat absen berhasil diupdate: ${namaPanggilan} - ${tanggal} - ${statusAbsen}`);
         return true;
@@ -622,17 +647,17 @@ function escapeHtml(text) {
 
 // Event Listener untuk tombol kirim dan input chat - REWRITE TOTAL dengan cloneNode
 document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi chatHistory jika belum ada
-    if (typeof window.chatHistory === 'undefined') {
-        window.chatHistory = [];
-    }
-
     // 1. Ambil elemen tombol dan input (SESUAIKAN ID/CLASS DENGAN HTML-MU)
     const chatInput = document.querySelector('input[placeholder="Ketik pesan..."]') || document.getElementById('chatInput');
     const chatSendBtn = chatInput ? chatInput.nextElementSibling : null; // Asumsi tombol ada di sebelah input
-    const chatBox = document.getElementById('chatContainer') || document.querySelector('.chat-messages');
+    const chatBox = document.getElementById('aiChatMessages') || document.getElementById('chatContainer') || document.querySelector('.chat-messages');
 
     if (chatInput && chatSendBtn && chatBox) {
+        // Inisialisasi chatHistory jika belum ada
+        if (typeof window.chatHistory === 'undefined') {
+            window.chatHistory = [];
+        }
+
         // 2. JURUS CLONE: Hapus semua event listener lama dari tombol!
         const newSendBtn = chatSendBtn.cloneNode(true);
         chatSendBtn.parentNode.replaceChild(newSendBtn, chatSendBtn);
@@ -707,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     .update({
                                         status_absen: cmd.status.toLowerCase(),
                                         alasan: cmd.alasan || '-',
-                                        waktu: jamSekarang
+                                        waktu_absen: new Date().toISOString()
                                     })
                                     .eq('id', existingData.id);
                                 dbError = updateRes.error;
@@ -720,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         tanggal: selectedDate,
                                         status_absen: cmd.status.toLowerCase(),
                                         alasan: cmd.alasan || '-',
-                                        waktu: jamSekarang
+                                        waktu_absen: new Date().toISOString()
                                     });
                                 dbError = insertRes.error;
                             }
@@ -753,9 +778,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') newSendBtn.click();
         });
 
-    } else {
-        console.error("Elemen UI Chat tidak ditemukan, pastikan selectornya benar!");
     }
+    // Tidak perlu console.error jika elemen tidak ditemukan (halaman lain seperti siswa.html tidak punya chat)
 });
 
 // Export fungsi CSV agar bisa diakses dari HTML
