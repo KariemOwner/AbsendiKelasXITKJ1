@@ -860,18 +860,49 @@
                         const { data: siswa } = await supabaseClient.from('siswa').select('nama_panggilan').ilike('nama_panggilan', `%${cmd.nama}%`).single();
 
                         if (siswa) {
-                            const { error } = await supabaseClient.from('riwayat_absen').upsert({
-                                nama_panggilan: siswa.nama_panggilan,
-                                tanggal: selectedDate,
-                                status_absen: cmd.status.toLowerCase(),
-                                alasan: cmd.alasan || '-',
-                                waktu: jamSekarang
-                            }, { onConflict: 'nama_panggilan, tanggal' });
-                            
-                            if (!error) {
-                                console.log("🚀 Supabase SUKSES diupdate!");
+                            // --- MULAI BLOK SUPABASE AMAN ---
+                            // 1. Cek data existing
+                            const { data: existingData } = await supabaseClient
+                                .from('riwayat_absen')
+                                .select('id')
+                                .eq('nama_panggilan', siswa.nama_panggilan)
+                                .eq('tanggal', selectedDate)
+                                .maybeSingle();
+
+                            let dbError = null;
+
+                            if (existingData) {
+                                // 2. Jika ada, UPDATE
+                                const updateRes = await supabaseClient
+                                    .from('riwayat_absen')
+                                    .update({
+                                        status_absen: cmd.status.toLowerCase(),
+                                        alasan: cmd.alasan || '-',
+                                        waktu: jamSekarang
+                                    })
+                                    .eq('id', existingData.id);
+                                dbError = updateRes.error;
+                            } else {
+                                // 3. Jika tidak ada, INSERT
+                                const insertRes = await supabaseClient
+                                    .from('riwayat_absen')
+                                    .insert({
+                                        nama_panggilan: siswa.nama_panggilan,
+                                        tanggal: selectedDate,
+                                        status_absen: cmd.status.toLowerCase(),
+                                        alasan: cmd.alasan || '-',
+                                        waktu: jamSekarang
+                                    });
+                                dbError = insertRes.error;
+                            }
+
+                            if (dbError) {
+                                console.error("❌ Gagal simpan ke Supabase:", dbError);
+                            } else {
+                                console.log("🚀 Supabase SUKSES disimpan!");
                                 setTimeout(() => { window.location.reload(); }, 1500);
                             }
+                            // --- AKHIR BLOK SUPABASE AMAN ---
                         }
                     } catch (e) { console.error("❌ Error JSON Parse:", e); }
                 }
